@@ -111,7 +111,12 @@ async function tryServeHtmlWithInjection(req, res, next) {
       if (!html.includes("/assets/site-en.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/site-en.js"></script>\n</body>'
+          '  <script defer src="/assets/site-en.js"></script>\n  <script defer src="/assets/room-detail-from-db.js"></script>\n</body>'
+        );
+      } else if (!html.includes("/assets/room-detail-from-db.js")) {
+        html = html.replace(
+          /<\/body\s*>/i,
+          '  <script defer src="/assets/room-detail-from-db.js"></script>\n</body>'
         );
       }
 
@@ -166,6 +171,7 @@ app.get("/api/public/settings", async (_req, res) => {
 
 // --- Public Rooms API (used by stay page JS) ---
 app.get("/api/rooms", async (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   const rooms = await listRooms();
   res.json({
     rooms: rooms.map((r) => ({
@@ -183,6 +189,7 @@ app.get("/api/rooms", async (_req, res) => {
 });
 
 app.get("/api/public/rooms", async (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   const rooms = await listRooms();
   res.json({
     rooms: rooms.map((r) => ({
