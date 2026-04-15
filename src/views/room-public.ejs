@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js no-svg">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title><%= room.name %> - Tamcoc Oasis</title>
+    <link rel="canonical" href="/room/<%= room.slug %>/" />
+
+    <link rel="stylesheet" href="/wp-content/plugins/cozystay-core/assets/libs/flaticon-font/flaticon_hotel.min.css?ver=2025021201" />
+    <link rel="stylesheet" href="/wp-content/themes/cozystay/assets/fonts/font-awesome/css/all.min.css?ver=6.9.4" />
+    <link rel="stylesheet" href="/wp-content/themes/cozystay/assets/styles/front/main.min.css?ver=20250201201" />
+    <style>
+      .cms-room-wrap { padding: 60px 0; }
+      .cms-room-container { max-width: 1100px; margin: 0 auto; padding: 0 18px; }
+      .cms-room-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 28px; }
+      @media (max-width: 980px) { .cms-room-grid { grid-template-columns: 1fr; } }
+      .cms-room-title { margin: 0 0 12px; }
+      .cms-room-meta ul { list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:16px; }
+      .cms-room-meta li { display:flex; align-items:center; gap:8px; }
+      .cms-room-meta .csrbi-icon { display:flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius: 999px; background: rgba(185,157,117,.12); }
+      .cms-room-meta .csrbi-text { opacity:.9; }
+      .cms-included { margin-top: 22px; }
+      .cms-included ul { margin: 10px 0 0; padding-left: 18px; }
+      .cms-gallery ul { list-style:none; margin:0; padding:0; display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .cms-gallery img { width:100%; height:auto; display:block; border-radius: 10px; }
+      .cms-fixed { margin-top: 18px; padding: 14px 16px; border: 1px solid rgba(185,157,117,.25); border-radius: 12px; background: rgba(185,157,117,.06); }
+      .cms-fixed h4 { margin: 0 0 6px; font-size: 14px; letter-spacing: .08em; text-transform: uppercase; }
+      .cms-fixed p { margin: 0; opacity:.85; }
+    </style>
+  </head>
+  <body class="page">
+    <div id="page" class="site">
+      <div class="cms-room-wrap">
+        <div class="cms-room-container">
+          <div class="cms-room-grid">
+            <div>
+              <h1 class="cms-room-title"><%= room.name %></h1>
+
+              <div class="cms-room-meta cs-room-basic-info">
+                <ul>
+                  <% if (room.size) { %>
+                    <li><div class="csrbi-icon"><i class="flaticon flaticon-maximize"></i></div><span class="csrbi-text"><%= room.size %></span></li>
+                  <% } %>
+                  <li><div class="csrbi-icon"><i class="flaticon flaticon-user-2"></i></div><span class="csrbi-text"><%= room.guests %> Guests</span></li>
+                  <% if (room.bed) { %>
+                    <li><div class="csrbi-icon"><i class="flaticon flaticon-bed-6"></i></div><span class="csrbi-text"><%= room.bed %></span></li>
+                  <% } %>
+                  <% if (room.bathroom) { %>
+                    <li><div class="csrbi-icon"><i class="flaticon flaticon-bathing"></i></div><span class="csrbi-text"><%= room.bathroom %></span></li>
+                  <% } %>
+                </ul>
+              </div>
+
+              <div class="post-excerpt item-excerpt" style="margin-top:16px;">
+                <p><%= room.description %></p>
+              </div>
+
+              <div class="cms-included">
+                <h4 class="cs-subtitle" style="margin:0;">Included</h4>
+                <ul>
+                  <% room.included.forEach((x) => { %>
+                    <li><%= x %></li>
+                  <% }) %>
+                </ul>
+              </div>
+
+              <div class="cms-fixed">
+                <h4>Amenities (Fixed)</h4>
+                <p>These sections are fixed in the theme and not editable in the CMS.</p>
+              </div>
+            </div>
+
+            <div class="cms-gallery">
+              <ul>
+                <% room.images.forEach((img) => { %>
+                  <li><img src="<%= img.url %>" alt="<%= img.alt || room.name %>" loading="lazy" decoding="async" /></li>
+                <% }) %>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script defer src="/assets/site-en.js"></script>
+  </body>
+</html>
+

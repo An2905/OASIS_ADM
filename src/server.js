@@ -162,6 +162,41 @@ app.get("/api/public/settings", async (_req, res) => {
   }
 });
 
+// --- Public Rooms API (used by stay page JS) ---
+app.get("/api/rooms", async (_req, res) => {
+  const rooms = await listRooms();
+  res.json({
+    rooms: rooms.map((r) => ({
+      slug: r.slug,
+      name: r.name,
+      size: r.size || "",
+      guests: 2,
+      bed: r.bed || "",
+      bathroom: r.bathroom || "",
+      description: r.description,
+      images: r.images.map((img) => img.url),
+      status: "ACTIVE"
+    }))
+  });
+});
+
+app.get("/api/public/rooms", async (_req, res) => {
+  const rooms = await listRooms();
+  res.json({
+    rooms: rooms.map((r) => ({
+      slug: r.slug,
+      name: r.name,
+      size: r.size || "",
+      guests: 2,
+      bed: r.bed || "",
+      bathroom: r.bathroom || "",
+      description: r.description,
+      included: r.included,
+      images: r.images.map((img) => ({ url: img.url, alt: img.alt || "" }))
+    }))
+  });
+});
+
 // --- Admin ---
 app.get("/admin/login", (req, res) => {
   let message = null;
@@ -322,6 +357,32 @@ app.post("/admin/rooms/:id", requireAdmin, async (req, res) => {
 app.post("/admin/rooms/:id/delete", requireAdmin, async (req, res) => {
   await deleteRoom(req.params.id);
   res.redirect("/admin/rooms");
+});
+
+// --- Public room details (DB-backed fallback) ---
+app.get("/room/:slug/", async (req, res, next) => {
+  // If a static file exists, static middleware already served it.
+  const slug = String(req.params.slug || "").toLowerCase();
+  try {
+    const rooms = await listRooms();
+    const room = rooms.find((r) => r.slug === slug);
+    if (!room) return next();
+    res.render("room-public", {
+      room: {
+        slug: room.slug,
+        name: room.name,
+        size: room.size || "",
+        guests: 2,
+        bed: room.bed || "",
+        bathroom: room.bathroom || "",
+        description: room.description,
+        included: room.included.split("\n").map((x) => x.trim()).filter(Boolean),
+        images: room.images.map((img) => ({ url: img.url, alt: img.alt || "" }))
+      }
+    });
+  } catch {
+    return next();
+  }
 });
 
 // --- Public root ---

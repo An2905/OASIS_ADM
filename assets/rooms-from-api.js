@@ -14,10 +14,36 @@
       '<div class="posts-wrapper cs-rooms-wrapper">' +
       rooms
         .map(function (r) {
+          var imgs = Array.isArray(r.images) ? r.images.slice(0, 6) : [];
+          while (imgs.length < 6) imgs.push("");
+          var gallery =
+            '<div class="featured-img">' +
+            '<a href="/room/' +
+            esc(r.slug) +
+            '/" aria-label="Room Featured Image">' +
+            '<ul class="thumbnail-gallery">' +
+            imgs
+              .map(function (src) {
+                if (!src) return "<li></li>";
+                return (
+                  "<li><img loading=\"lazy\" decoding=\"async\" src=\"" +
+                  esc(src) +
+                  "\" alt=\"\" /></li>"
+                );
+              })
+              .join("") +
+            "</ul>" +
+            "</a>" +
+            '<div class="slider-arrows"></div>' +
+            '<div class="slider-dots"></div>' +
+            "</div>";
+
           return (
-            '<div class="post cs-room-item format-standard">' +
+            '<div class="post cs-room-item has-post-thumbnail format-gallery">' +
+            gallery +
             '<div class="post-content cs-room-content">' +
             '<header class="post-header item-header">' +
+            '<div class="item-subtitle"></div>' +
             '<h2 class="post-title item-title">' +
             '<a href="/room/' +
             esc(r.slug) +
@@ -26,6 +52,9 @@
             "</a>" +
             "</h2>" +
             '<div class="cs-room-basic-info"><ul>' +
+            '<li><div class="csrbi-icon"><i class="flaticon flaticon-maximize"></i></div><span class="csrbi-text">' +
+            esc(r.size || "") +
+            "</span></li>" +
             '<li><div class="csrbi-icon"><i class="flaticon flaticon-user-2"></i></div><span class="csrbi-text">' +
             esc(r.guests) +
             " Guests</span></li>" +
