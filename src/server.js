@@ -1,4 +1,5 @@
 import path from "node:path";
+import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import session from "express-session";
@@ -43,6 +44,77 @@ app.use(
     }
   })
 );
+
+function shouldBypassHtml(reqPath) {
+  return (
+    reqPath.startsWith("/assets/") ||
+    reqPath === "/assets" ||
+    reqPath.startsWith("/wp-content/") ||
+    reqPath === "/wp-content" ||
+    reqPath.startsWith("/wp-includes/") ||
+    reqPath === "/wp-includes" ||
+    reqPath.startsWith("/admin") ||
+    reqPath.startsWith("/api/") ||
+    reqPath === "/api" ||
+    reqPath === "/healthz"
+  );
+}
+
+function safeJoinRoot(root, reqPath) {
+  const normalized = path.posix.normalize(reqPath);
+  const stripped = normalized.replace(/^(\.\.(\/|\\|$))+/, "");
+  const full = path.join(root, stripped);
+  const resolved = path.resolve(full);
+  if (!resolved.startsWith(root)) return null;
+  return resolved;
+}
+
+async function tryServeHtmlWithInjection(req, res, next) {
+  if (req.method !== "GET") return next();
+  if (shouldBypassHtml(req.path)) return next();
+
+  const accept = String(req.headers.accept || "");
+  if (!accept.includes("text/html") && accept !== "*/*") return next();
+
+  const candidatePaths = [];
+  if (req.path === "/") {
+    candidatePaths.push(path.join(rootDir, "index.html"));
+  } else if (req.path.endsWith("/")) {
+    const p = safeJoinRoot(rootDir, path.posix.join(req.path, "index.html"));
+    if (p) candidatePaths.push(p);
+  } else if (path.extname(req.path)) {
+    const p = safeJoinRoot(rootDir, req.path);
+    if (p) candidatePaths.push(p);
+  } else {
+    const p = safeJoinRoot(rootDir, path.posix.join(req.path, "index.html"));
+    if (p) candidatePaths.push(p);
+  }
+
+  for (const filePath of candidatePaths) {
+    try {
+      const stat = await fs.stat(filePath);
+      if (!stat.isFile()) continue;
+      if (path.extname(filePath).toLowerCase() !== ".html") continue;
+
+      let html = await fs.readFile(filePath, "utf8");
+      if (!html.includes("/assets/site-en.js")) {
+        html = html.replace(
+          /<\/body\s*>/i,
+          '  <script defer src="/assets/site-en.js"></script>\n</body>'
+        );
+      }
+
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.status(200).send(html);
+    } catch {
+      // Not found: keep trying
+    }
+  }
+
+  return next();
+}
+
+app.use(tryServeHtmlWithInjection);
 
 // --- Static serving (allowlist) ---
 app.use("/assets", express.static(path.join(rootDir, "assets")));
@@ -159,9 +231,7 @@ app.post("/admin/settings", requireAdmin, async (req, res) => {
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
 // --- Public root ---
-app.get("/", (_req, res) => {
-  res.sendFile(path.join(rootDir, "index.html"));
-});
+// Root HTML is served via the HTML injection middleware above.
 
 // Final error handler (avoid blank 500)
 // eslint-disable-next-line no-unused-vars
