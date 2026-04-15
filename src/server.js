@@ -72,7 +72,8 @@ app.use(
     store: pgPool
       ? new PgSession({
           pool: pgPool,
-          tableName: "Session"
+          tableName: "Session",
+          createTableIfMissing: true
         })
       : undefined,
     cookie: {
