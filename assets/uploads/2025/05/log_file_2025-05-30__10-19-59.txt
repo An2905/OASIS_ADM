@@ -1,0 +1,27 @@
+
+---Downloaded files---
+The import files for: Island Resort were successfully downloaded!
+Initial max execution time = 6000
+Files info:
+Site URL = https://tamcocoasis.com
+Data file = /home/tamviet/domains/tamcocoasis.com/public_html/wp-content/themes/cozystay/demo-data/island-resort/content.xml
+Widget file = /home/tamviet/domains/tamcocoasis.com/public_html/wp-content/themes/cozystay/demo-data/island-resort/widgets.wie
+Customizer file = /home/tamviet/domains/tamcocoasis.com/public_html/wp-content/themes/cozystay/demo-data/island-resort/customizer.dat
+Redux files:
+not defined!
+
+---Importing widgets---
+Main Sidebar : 
+
+Tìm kiếm - No Title - Widget already exists
+CozyStay Posts - Popular Posts - Widget already exists
+Danh mục - No Title - Widget already exists
+Mailchimp Sign-Up Form - Newsletter - Widget already exists
+
+
+
+---Importing customizer settings---
+Customizer settings import finished!
+
+---ocdi/after_import---
+

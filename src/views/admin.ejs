@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Admin</title>
+    <style>
+      body { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial; background:#0b0f17; color:#e5e7eb; margin:0; }
+      .top { display:flex; align-items:center; justify-content:space-between; padding: 16px 20px; border-bottom:1px solid #1f2937; background:#0b0f17; position: sticky; top:0; }
+      .wrap { max-width: 980px; margin: 22px auto; padding: 0 18px 40px; }
+      .card { padding: 18px; background:#111827; border:1px solid #1f2937; border-radius: 14px; }
+      .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+      @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+      label { display:block; margin: 10px 0 6px; color:#cbd5e1; font-size: 13px; }
+      input, textarea { width:100%; padding:12px; border-radius:10px; border:1px solid #334155; background:#0b1220; color:#e5e7eb; }
+      textarea { min-height: 92px; resize: vertical; }
+      .btn { padding: 12px 14px; border-radius: 10px; border:1px solid #334155; background:#0b1220; color:#e5e7eb; cursor:pointer; font-weight:600; }
+      .btnPrimary { background:#22c55e; border-color:#16a34a; color:#052e16; }
+      .msgOk { margin: 12px 0; padding: 10px 12px; background:#052e16; border:1px solid #14532d; border-radius:10px; color:#bbf7d0; }
+      .msgErr { margin: 12px 0; padding: 10px 12px; background:#3f1d1d; border:1px solid #7f1d1d; border-radius:10px; color:#fecaca; }
+      .muted { color:#94a3b8; font-size: 13px; }
+      a { color:#93c5fd; }
+      .sectionTitle { margin: 0 0 12px; font-size: 16px; color:#e2e8f0; }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <div>
+        <div style="font-weight:700">Oasis CMS</div>
+        <div class="muted">Trang quản trị nội dung website</div>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <a class="btn" href="/" target="_blank" rel="noreferrer">Mở website</a>
+        <form method="post" action="/admin/logout" style="margin:0">
+          <button class="btn" type="submit">Đăng xuất</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="card">
+        <h2 class="sectionTitle">Nội dung chung</h2>
+        <p class="muted" style="margin-top:-6px">
+          Các trường dưới đây được JS cập nhật vào HTML thông qua `data-cms-*`. Bạn có thể mở site và refresh để thấy thay đổi.
+        </p>
+
+        <% if (saved) { %>
+          <div class="msgOk">Đã lưu. Refresh trang website để thấy thay đổi.</div>
+        <% } %>
+
+        <% if (errors) { %>
+          <div class="msgErr">
+            Lỗi dữ liệu. Vui lòng kiểm tra lại các trường (đặc biệt là Email / URL social).
+          </div>
+        <% } %>
+
+        <form method="post" action="/admin/settings">
+          <div class="grid">
+            <div>
+              <label>Site name</label>
+              <input name="siteName" value="<%= settings.siteName %>" required />
+            </div>
+            <div>
+              <label>Email</label>
+              <input name="emailAddress" type="email" value="<%= settings.emailAddress %>" required />
+            </div>
+            <div>
+              <label>Hotline label</label>
+              <input name="hotlineLabel" value="<%= settings.hotlineLabel %>" required />
+            </div>
+            <div>
+              <label>Hotline number</label>
+              <input name="hotlineNumber" value="<%= settings.hotlineNumber %>" required />
+            </div>
+          </div>
+
+          <h2 class="sectionTitle" style="margin-top:18px;">Hero / thông báo</h2>
+          <div class="grid">
+            <div>
+              <label>Hero title</label>
+              <input name="heroTitle" value="<%= settings.heroTitle %>" required />
+            </div>
+            <div>
+              <label>Hero note title</label>
+              <input name="heroNoteTitle" value="<%= settings.heroNoteTitle %>" required />
+            </div>
+          </div>
+          <div>
+            <label>Hero note body</label>
+            <textarea name="heroNoteBody" required><%= settings.heroNoteBody %></textarea>
+          </div>
+
+          <h2 class="sectionTitle" style="margin-top:18px;">Social links</h2>
+          <div class="grid">
+            <div>
+              <label>Facebook URL</label>
+              <input name="facebook" value="<%= settings.social.facebook || '' %>" />
+            </div>
+            <div>
+              <label>Instagram URL</label>
+              <input name="instagram" value="<%= settings.social.instagram || '' %>" />
+            </div>
+            <div>
+              <label>YouTube URL</label>
+              <input name="youtube" value="<%= settings.social.youtube || '' %>" />
+            </div>
+            <div>
+              <label>Twitter URL</label>
+              <input name="twitter" value="<%= settings.social.twitter || '' %>" />
+            </div>
+            <div>
+              <label>Pinterest URL</label>
+              <input name="pinterest" value="<%= settings.social.pinterest || '' %>" />
+            </div>
+            <div></div>
+          </div>
+
+          <h2 class="sectionTitle" style="margin-top:18px;">Footer</h2>
+          <div>
+            <label>Copyright</label>
+            <input name="copyrightText" value="<%= settings.copyrightText %>" required />
+          </div>
+
+          <div style="display:flex; gap: 10px; margin-top: 14px;">
+            <button class="btn btnPrimary" type="submit">Lưu thay đổi</button>
+            <a class="btn" href="/admin">Reset form</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+

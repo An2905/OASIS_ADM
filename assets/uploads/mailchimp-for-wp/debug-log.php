@@ -1,0 +1,24 @@
+<?php exit; ?>
+[2025-06-28 05:05:21] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2025-06-28 16:02:03] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2025-11-24 16:01:13] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2025-12-29 13:05:04] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2025-12-29 13:05:13] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2025-12-29 13:05:22] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2025-12-29 17:38:38] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2025-12-31 12:48:30] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2025-12-31 12:48:50] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-01-06 12:14:37] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-01-06 12:14:53] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-01-09 14:20:14] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-01-09 14:20:29] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-01-09 14:20:31] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-01-09 14:20:45] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-01-18 09:21:16] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-01-18 09:21:25] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-01-19 23:01:33] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-02-08 11:54:53] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-02-14 09:07:16] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-02-17 05:31:53] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-03-09 03:01:29] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
+[2026-03-09 03:01:39] ERROR: Form 50 > Mailchimp API error: 1 Missing API key.
