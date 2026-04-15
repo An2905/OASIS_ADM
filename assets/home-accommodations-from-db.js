@@ -44,9 +44,10 @@
     const u = String(url || "").trim();
     // Only accept clearly valid URLs (avoid setting broken src like "undefined")
     if (!u || (!u.startsWith("/") && !u.startsWith("http://") && !u.startsWith("https://"))) return;
+    const current = String(imgEl.getAttribute("src") || "").trim();
+    if (current === u) return; // avoid reloading/flicker
     imgEl.setAttribute("src", u);
-    // Keep theme sizing; just remove responsive candidates if present.
-    imgEl.removeAttribute("srcset");
+    // Do NOT touch srcset/sizes; theme relies on them for layout.
   };
 
   const applyRoomToNode = (postEl, r) => {
