@@ -49,3 +49,10 @@ model RoomImage {
   @@unique([roomId, sortOrder])
 }
 
+model Media {
+  id        String   @id @default(cuid())
+  mimeType  String
+  bytes     Bytes
+  createdAt DateTime @default(now())
+}
+

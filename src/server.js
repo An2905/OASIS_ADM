@@ -7,6 +7,7 @@ import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
+import Busboy from "busboy";
 
 import { requireAdmin, verifyLogin } from "./auth.js";
 import { getPublicSettings, upsertPublicSettings, PublicSettingsSchema } from "./settings.js";
@@ -19,6 +20,7 @@ import {
   RoomCategoryInputSchema,
   updateRoom
 } from "./rooms.js";
+import { createMedia, getMediaById } from "./media.js";
 
 dotenv.config();
 
@@ -282,6 +284,54 @@ app.post("/admin/settings", requireAdmin, async (req, res) => {
 });
 
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
+
+// --- Media (DB-backed uploads) ---
+app.get("/media/:id", async (req, res) => {
+  const id = String(req.params.id || "");
+  const media = await getMediaById(id);
+  if (!media) return res.status(404).send("Not found");
+  res.setHeader("Content-Type", media.mimeType);
+  res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+  res.send(Buffer.from(media.bytes));
+});
+
+app.post("/admin/media/upload", requireAdmin, (req, res) => {
+  const bb = Busboy({ headers: req.headers, limits: { files: 1, fileSize: 8 * 1024 * 1024 } }); // 8MB
+
+  let mimeType = "";
+  let chunks = [];
+  let total = 0;
+  let handled = false;
+
+  bb.on("file", (_name, file, info) => {
+    handled = true;
+    mimeType = info.mimeType || "application/octet-stream";
+    file.on("data", (d) => {
+      chunks.push(d);
+      total += d.length;
+    });
+    file.on("limit", () => {
+      chunks = [];
+      total = 0;
+    });
+  });
+
+  bb.on("finish", async () => {
+    if (!handled || total === 0) return res.status(400).json({ error: "No file" });
+    if (!/^image\/(jpeg|png|webp)$/.test(mimeType)) {
+      return res.status(400).json({ error: "Only jpeg/png/webp allowed" });
+    }
+    try {
+      const bytes = Buffer.concat(chunks);
+      const media = await createMedia({ bytes, mimeType });
+      res.json({ url: `/media/${media.id}` });
+    } catch (e) {
+      res.status(500).json({ error: "Upload failed" });
+    }
+  });
+
+  req.pipe(bb);
+});
 
 // --- Rooms (CRUD) ---
 app.get("/admin/rooms", requireAdmin, async (_req, res) => {

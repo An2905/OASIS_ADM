@@ -88,6 +88,18 @@
       .err{ margin: 12px 0; padding: 10px 12px; background: rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.35); border-radius:12px; color:#fecaca; }
       .sectionTitle{ margin: 16px 0 10px; font-size: 12px; letter-spacing:.12em; text-transform: uppercase; color:#dbeafe; }
       .hint{ margin-top: 10px; padding: 10px 12px; border-radius: 12px; border:1px solid var(--stroke); background: rgba(2,6,23,.35); color: var(--muted); font-size: 13px; }
+      .drop{
+        margin-top: 8px;
+        border: 1px dashed rgba(148,163,184,.35);
+        background: rgba(2,6,23,.35);
+        border-radius: 14px;
+        padding: 12px;
+      }
+      .drop.drag{ border-color: rgba(167,139,250,.7); box-shadow: 0 0 0 4px rgba(167,139,250,.12); }
+      .dropTop{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+      .dropHint{ color: var(--muted); font-size: 12px; line-height: 1.5; }
+      .thumb{ margin-top: 10px; width: 100%; aspect-ratio: 16 / 10; border-radius: 12px; overflow:hidden; border: 1px solid rgba(148,163,184,.18); background: rgba(0,0,0,.2); display:flex; align-items:center; justify-content:center; }
+      .thumb img{ width: 100%; height: 100%; object-fit: cover; display:block; }
     </style>
   </head>
   <body>
@@ -160,9 +172,29 @@
             <% for (let i = 0; i < 6; i++) { %>
               <div>
                 <label>Image <%= i+1 %> URL</label>
-                <input name="image<%= i+1 %>Url" value="<%= imgs[i]?.url || '' %>" placeholder="/assets/uploads/...jpg or https://..." required />
+                <input class="js-img-url" data-index="<%= i %>" name="image<%= i+1 %>Url" value="<%= imgs[i]?.url || '' %>" placeholder="/media/... or https://..." required />
                 <label style="margin-top:8px;">Image <%= i+1 %> alt (optional)</label>
                 <input name="image<%= i+1 %>Alt" value="<%= imgs[i]?.alt || '' %>" placeholder="Deluxe room concept" />
+
+                <div class="drop js-drop" data-index="<%= i %>">
+                  <div class="dropTop">
+                    <div class="dropHint">
+                      Drag & drop an image here, or pick a file. We will auto-scale to a standard size.
+                    </div>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                      <input class="js-file" data-index="<%= i %>" type="file" accept="image/*" style="max-width: 210px;" />
+                      <button class="btn" type="button" onclick="window.__roomUploadClear(<%= i %>)">Clear</button>
+                    </div>
+                  </div>
+                  <div class="thumb">
+                    <% if (imgs[i]?.url) { %>
+                      <img class="js-thumb" data-index="<%= i %>" src="<%= imgs[i].url %>" alt="" />
+                    <% } else { %>
+                      <img class="js-thumb" data-index="<%= i %>" src="" alt="" style="display:none;" />
+                      <span class="muted">No image</span>
+                    <% } %>
+                  </div>
+                </div>
               </div>
             <% } %>
           </div>
@@ -174,6 +206,99 @@
         </form>
       </div>
     </div>
+
+    <script>
+      async function scaleImageToJpeg(file, maxW, maxH, quality) {
+        const bmp = await createImageBitmap(file);
+        const ratio = Math.min(maxW / bmp.width, maxH / bmp.height, 1);
+        const w = Math.round(bmp.width * ratio);
+        const h = Math.round(bmp.height * ratio);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(bmp, 0, 0, w, h);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+        return blob;
+      }
+
+      async function uploadBlob(blob) {
+        const fd = new FormData();
+        fd.append("file", blob, "concept.jpg");
+        const res = await fetch("/admin/media/upload", { method: "POST", body: fd, credentials: "same-origin" });
+        if (!res.ok) throw new Error("Upload failed");
+        return await res.json();
+      }
+
+      function setThumb(i, url) {
+        const img = document.querySelector('.js-thumb[data-index="' + i + '"]');
+        if (!img) return;
+        if (!url) {
+          img.removeAttribute("src");
+          img.style.display = "none";
+          return;
+        }
+        img.src = url;
+        img.style.display = "block";
+      }
+
+      function setUrl(i, url) {
+        const input = document.querySelector('.js-img-url[data-index="' + i + '"]');
+        if (input) input.value = url || "";
+      }
+
+      window.__roomUploadClear = function (i) {
+        setUrl(i, "");
+        setThumb(i, "");
+        const file = document.querySelector('.js-file[data-index="' + i + '"]');
+        if (file) file.value = "";
+      };
+
+      async function handleFile(i, file) {
+        if (!file) return;
+        const drop = document.querySelector('.js-drop[data-index="' + i + '"]');
+        try {
+          if (drop) drop.classList.add("drag");
+          const blob = await scaleImageToJpeg(file, 1600, 1200, 0.82);
+          const { url } = await uploadBlob(blob);
+          setUrl(i, url);
+          setThumb(i, url);
+        } finally {
+          if (drop) drop.classList.remove("drag");
+        }
+      }
+
+      document.querySelectorAll(".js-file").forEach((inp) => {
+        inp.addEventListener("change", (e) => {
+          const i = Number(inp.dataset.index || "0");
+          const f = inp.files && inp.files[0];
+          handleFile(i, f);
+        });
+      });
+
+      document.querySelectorAll(".js-drop").forEach((box) => {
+        box.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          box.classList.add("drag");
+        });
+        box.addEventListener("dragleave", () => box.classList.remove("drag"));
+        box.addEventListener("drop", (e) => {
+          e.preventDefault();
+          box.classList.remove("drag");
+          const i = Number(box.dataset.index || "0");
+          const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+          handleFile(i, f);
+        });
+      });
+
+      // Keep preview in sync if user pastes a URL manually
+      document.querySelectorAll(".js-img-url").forEach((inp) => {
+        inp.addEventListener("input", () => {
+          const i = Number(inp.dataset.index || "0");
+          setThumb(i, inp.value);
+        });
+      });
+    </script>
   </body>
 </html>
 
