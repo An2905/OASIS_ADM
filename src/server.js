@@ -45,10 +45,20 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "1mb" }));
 
 const PgSession = connectPgSimple(session);
-const pgPool = process.env.DATABASE_URL
+const databaseUrl = process.env.DATABASE_URL || "";
+const shouldUsePgSession = Boolean(databaseUrl);
+const isRailwayInternal = databaseUrl.includes("railway.internal");
+const sslModeRequires =
+  /(?:^|[?&])sslmode=require(?:&|$)/i.test(databaseUrl) ||
+  /(?:^|[?&])ssl=true(?:&|$)/i.test(databaseUrl) ||
+  String(process.env.PGSSLMODE || "").toLowerCase() === "require";
+
+const pgPool = shouldUsePgSession
   ? new pg.Pool({
-      connectionString: process.env.DATABASE_URL,
-      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined
+      connectionString: databaseUrl,
+      // Railway internal Postgres typically doesn't use TLS.
+      // Only enable SSL when the connection string (or env) explicitly requires it.
+      ssl: !isRailwayInternal && sslModeRequires ? { rejectUnauthorized: false } : undefined
     })
   : null;
 
