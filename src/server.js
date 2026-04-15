@@ -3,6 +3,8 @@ import fs from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import express from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import pg from "pg";
 import helmet from "helmet";
 import morgan from "morgan";
 import cookieParser from "cookie-parser";
@@ -42,6 +44,14 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json({ limit: "1mb" }));
 
+const PgSession = connectPgSimple(session);
+const pgPool = process.env.DATABASE_URL
+  ? new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined
+    })
+  : null;
+
 app.use(
   session({
     name: "oasis_admin",
@@ -49,6 +59,12 @@ app.use(
     resave: false,
     saveUninitialized: false,
     rolling: true,
+    store: pgPool
+      ? new PgSession({
+          pool: pgPool,
+          tableName: "Session"
+        })
+      : undefined,
     cookie: {
       httpOnly: true,
       sameSite: "lax",
