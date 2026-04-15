@@ -45,9 +45,8 @@
     // Only accept clearly valid URLs (avoid setting broken src like "undefined")
     if (!u || (!u.startsWith("/") && !u.startsWith("http://") && !u.startsWith("https://"))) return;
     imgEl.setAttribute("src", u);
-    // Avoid stale responsive sources from cloned nodes.
+    // Keep theme sizing; just remove responsive candidates if present.
     imgEl.removeAttribute("srcset");
-    imgEl.removeAttribute("sizes");
   };
 
   const applyRoomToNode = (postEl, r) => {
@@ -56,9 +55,6 @@
     const size = normalizeSize(r.size);
     const bed = normalizeBed(r.bed);
     const guests = r.guests || 2;
-
-    postEl.classList.remove("hide");
-    postEl.style.display = "";
 
     const featuredA = postEl.querySelector(".featured-img a");
     setHref(featuredA, href);
@@ -89,28 +85,14 @@
     if (!found || !found.wrapper) return;
 
     // IMPORTANT: don't replace wrapper HTML; it breaks theme/carousel layout.
-    // Instead update existing nodes (and clone if we need more).
+    // Also don't clone/hide nodes; carousel JS depends on a stable DOM.
     const existing = Array.from(found.wrapper.querySelectorAll(".post.cs-room-item"));
     if (!existing.length) return;
 
-    const template = existing[0];
-
-    // Ensure we have enough nodes
-    while (existing.length < rooms.length) {
-      const clone = template.cloneNode(true);
-      found.wrapper.appendChild(clone);
-      existing.push(clone);
-    }
-
-    // Apply rooms
-    for (let i = 0; i < rooms.length; i++) {
+    // Apply up to existing count (leave extras untouched)
+    const n = Math.min(existing.length, rooms.length);
+    for (let i = 0; i < n; i++) {
       applyRoomToNode(existing[i], rooms[i]);
-    }
-
-    // Hide extras
-    for (let i = rooms.length; i < existing.length; i++) {
-      existing[i].classList.add("hide");
-      existing[i].style.display = "none";
     }
   };
 
