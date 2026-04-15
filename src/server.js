@@ -113,7 +113,7 @@ async function tryServeHtmlWithInjection(req, res, next) {
       if (!html.includes("/assets/site-en.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/site-en.js?v=2"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=2"></script>\n  <script defer src="/assets/home-accommodations-from-db.js?v=1"></script>\n</body>'
+          '  <script defer src="/assets/site-en.js?v=2"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=2"></script>\n  <script defer src="/assets/home-accommodations-from-db.js?v=2"></script>\n</body>'
         );
       } else if (!html.includes("/assets/room-detail-from-db.js")) {
         html = html.replace(
@@ -123,7 +123,7 @@ async function tryServeHtmlWithInjection(req, res, next) {
       } else if (!html.includes("/assets/home-accommodations-from-db.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/home-accommodations-from-db.js?v=1"></script>\n</body>'
+          '  <script defer src="/assets/home-accommodations-from-db.js?v=2"></script>\n</body>'
         );
       }
 

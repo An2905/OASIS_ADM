@@ -33,6 +33,40 @@
     const found = findCarouselWrapper();
     if (!found || !found.wrapper) return;
 
+    // If theme carousel JS doesn't re-init after DOM swap,
+    // enforce a 3-column grid so it doesn't become a vertical list.
+    if (found.posts && !found.posts.classList.contains("cms-db-home")) {
+      found.posts.classList.add("cms-db-home");
+      if (!document.getElementById("cms-db-home-rooms-style")) {
+        const style = document.createElement("style");
+        style.id = "cms-db-home-rooms-style";
+        style.textContent = `
+          .posts.cs-rooms.cs-rooms-carousel.cms-db-home .posts-wrapper.cs-rooms-wrapper{
+            display:grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 30px;
+          }
+          @media (max-width: 1024px){
+            .posts.cs-rooms.cs-rooms-carousel.cms-db-home .posts-wrapper.cs-rooms-wrapper{
+              grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+          }
+          @media (max-width: 640px){
+            .posts.cs-rooms.cs-rooms-carousel.cms-db-home .posts-wrapper.cs-rooms-wrapper{
+              grid-template-columns: 1fr;
+            }
+          }
+          .posts.cs-rooms.cs-rooms-carousel.cms-db-home .featured-img img{
+            width:100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            display:block;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+    }
+
     found.wrapper.innerHTML = rooms
       .map((r) => {
         const img = Array.isArray(r.images) && r.images[0] ? r.images[0] : "";
