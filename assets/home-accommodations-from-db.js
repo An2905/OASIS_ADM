@@ -42,7 +42,8 @@
   const setImg = (imgEl, url) => {
     if (!imgEl) return;
     const u = String(url || "").trim();
-    if (!u) return;
+    // Only accept clearly valid URLs (avoid setting broken src like "undefined")
+    if (!u || (!u.startsWith("/") && !u.startsWith("http://") && !u.startsWith("https://"))) return;
     imgEl.setAttribute("src", u);
     // Avoid stale responsive sources from cloned nodes.
     imgEl.removeAttribute("srcset");
@@ -57,6 +58,7 @@
     const guests = r.guests || 2;
 
     postEl.classList.remove("hide");
+    postEl.style.display = "";
 
     const featuredA = postEl.querySelector(".featured-img a");
     setHref(featuredA, href);
@@ -108,6 +110,7 @@
     // Hide extras
     for (let i = rooms.length; i < existing.length; i++) {
       existing[i].classList.add("hide");
+      existing[i].style.display = "none";
     }
   };
 
