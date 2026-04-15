@@ -5,25 +5,100 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><%= mode === 'create' ? 'New room' : 'Edit room' %></title>
     <style>
-      body{ font-family: Arial, Helvetica, sans-serif; background:#0b1220; color:#e5e7eb; margin:0; }
-      .top{ position:sticky; top:0; background:rgba(7,10,17,.85); backdrop-filter: blur(10px); border-bottom:1px solid rgba(148,163,184,.18); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+      :root{
+        --bg0:#070a11;
+        --bg1:#0b1220;
+        --card:rgba(17,24,39,.78);
+        --stroke:rgba(148,163,184,.18);
+        --text:#e5e7eb;
+        --muted:#a3adc2;
+        --brand1:#a78bfa;
+        --brand2:#22d3ee;
+        --danger:#ef4444;
+        --shadow: 0 22px 70px rgba(0,0,0,.55);
+      }
+      *{ box-sizing:border-box; }
+      body{
+        font-family: Arial, Helvetica, sans-serif;
+        margin:0;
+        color:var(--text);
+        background:
+          radial-gradient(1000px 600px at 12% 0%, rgba(167,139,250,.22), transparent 55%),
+          radial-gradient(900px 520px at 90% 10%, rgba(34,211,238,.14), transparent 60%),
+          linear-gradient(180deg, var(--bg0), var(--bg1));
+        min-height:100vh;
+      }
+      .top{
+        position: sticky;
+        top:0;
+        z-index:10;
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        padding: 14px 18px;
+        border-bottom:1px solid var(--stroke);
+        background: rgba(7,10,17,.72);
+        backdrop-filter: blur(14px);
+      }
+      .brand{ display:flex; gap:12px; align-items:center; }
+      .logo{
+        width:34px;height:34px;border-radius:12px;
+        background: linear-gradient(135deg, var(--brand1), var(--brand2));
+        box-shadow: 0 10px 30px rgba(167,139,250,.18);
+      }
+      .brandTitle{ font-weight:900; letter-spacing:.2px; }
+      .muted{ color:var(--muted); font-size: 13px; }
       .wrap{ max-width: 1100px; margin:18px auto; padding: 0 16px 44px; }
-      .card{ border:1px solid rgba(148,163,184,.18); background:rgba(17,24,39,.78); border-radius:16px; padding:16px; }
+      .card{
+        padding: 18px;
+        border:1px solid var(--stroke);
+        background: var(--card);
+        backdrop-filter: blur(14px);
+        border-radius: 18px;
+        box-shadow: var(--shadow);
+      }
       .grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
       @media (max-width: 860px){ .grid{ grid-template-columns: 1fr; } }
       label{ display:block; margin:0 0 6px; color:#cbd5e1; font-size: 12px; }
-      input, textarea{ width:100%; padding:12px; border-radius:12px; border:1px solid rgba(148,163,184,.22); background:rgba(2,6,23,.55); color:#e5e7eb; }
+      input, textarea{
+        width:100%;
+        padding:12px;
+        border-radius:12px;
+        border:1px solid rgba(148,163,184,.22);
+        background:rgba(2,6,23,.55);
+        color:var(--text);
+        outline:none;
+      }
+      input:focus, textarea:focus{
+        border-color: rgba(167,139,250,.55);
+        box-shadow: 0 0 0 4px rgba(167,139,250,.12);
+      }
       textarea{ min-height: 120px; resize: vertical; }
-      .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; border:1px solid rgba(148,163,184,.22); background:rgba(2,6,23,.55); color:#e5e7eb; text-decoration:none; font-weight:800; cursor:pointer; }
-      .btnPrimary{ border:0; color:#06101a; background: linear-gradient(135deg, #a78bfa, #22d3ee); }
-      .muted{ color:#a3adc2; font-size: 13px; }
+      .btn{
+        display:inline-flex; align-items:center; gap:8px;
+        padding:10px 12px; border-radius:14px;
+        border:1px solid rgba(148,163,184,.22);
+        background:rgba(2,6,23,.55);
+        color:var(--text);
+        text-decoration:none;
+        font-weight:800;
+        cursor:pointer;
+      }
+      .btnPrimary{ border:0; color:#06101a; background: linear-gradient(135deg, var(--brand1), var(--brand2)); }
       .err{ margin: 12px 0; padding: 10px 12px; background: rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.35); border-radius:12px; color:#fecaca; }
-      .sectionTitle{ margin: 12px 0 10px; font-size: 12px; letter-spacing:.12em; text-transform: uppercase; color:#dbeafe; }
+      .sectionTitle{ margin: 16px 0 10px; font-size: 12px; letter-spacing:.12em; text-transform: uppercase; color:#dbeafe; }
+      .hint{ margin-top: 10px; padding: 10px 12px; border-radius: 12px; border:1px solid var(--stroke); background: rgba(2,6,23,.35); color: var(--muted); font-size: 13px; }
     </style>
   </head>
   <body>
     <div class="top">
-      <div style="font-weight:900"><%= mode === 'create' ? 'New room category' : 'Edit room category' %></div>
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          <div class="brandTitle"><%= mode === 'create' ? 'New room category' : 'Edit room category' %></div>
+          <div class="muted">Fields here are editable; amenities blocks stay fixed in the theme.</div>
+        </div>
+      </div>
       <div style="display:flex; gap:10px;">
         <a class="btn" href="/admin/rooms">Back</a>
         <a class="btn" href="/admin">CMS</a>
@@ -32,8 +107,8 @@
 
     <div class="wrap">
       <div class="card">
-        <div class="muted">
-          Amenities + Room amenities are fixed in UI (not stored here). You can edit: name, size, bed, bathroom, description, included, and concept images (6).
+        <div class="hint">
+          You can edit: name, size, bed, bathroom, description, included, and concept images (exactly 6). Amenities sections are fixed in the public layout.
         </div>
 
         <% if (errors && (errors.formErrors?.length || Object.keys(errors.fieldErrors || {}).length)) { %>
