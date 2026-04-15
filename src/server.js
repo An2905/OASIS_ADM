@@ -209,29 +209,32 @@ app.get("/api/public/rooms", async (_req, res) => {
 });
 
 // --- Admin ---
-app.get("/admin/login", (req, res) => {
+app.get("/loginDN", (req, res) => {
   let message = null;
   if (req.query.error) message = "Invalid credentials";
   if (req.query.db) message = "Database is not ready. Please check Railway Postgres + DATABASE_URL and redeploy.";
   res.render("login", { error: message });
 });
 
-app.post("/admin/login", async (req, res) => {
+app.post("/loginDN", async (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
   try {
     const user = await verifyLogin(email, password);
-    if (!user) return res.redirect("/admin/login?error=1");
+    if (!user) return res.redirect("/loginDN?error=1");
     req.session.admin = { id: user.id, email: user.email };
     res.redirect("/admin");
   } catch (_e) {
-    res.redirect("/admin/login?db=1");
+    res.redirect("/loginDN?db=1");
   }
 });
 
 app.post("/admin/logout", (req, res) => {
-  req.session.destroy(() => res.redirect("/admin/login"));
+  req.session.destroy(() => res.redirect("/loginDN"));
 });
+
+// Backward-compatible redirect (old login route)
+app.get("/admin/login", (_req, res) => res.redirect(301, "/loginDN"));
 
 app.get("/admin", requireAdmin, async (_req, res) => {
   try {

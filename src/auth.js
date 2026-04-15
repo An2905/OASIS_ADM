@@ -11,6 +11,6 @@ export async function verifyLogin(email, password) {
 
 export function requireAdmin(req, res, next) {
   if (req.session?.admin) return next();
-  res.redirect("/admin/login");
+  res.redirect("/loginDN");
 }
 
