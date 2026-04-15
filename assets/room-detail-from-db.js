@@ -65,11 +65,13 @@
 
   async function run() {
     try {
-      const res = await fetch("/api/public/rooms", { cache: "no-store", credentials: "same-origin" });
+      const res = await fetch("/api/public/room/" + encodeURIComponent(slug), {
+        cache: "no-store",
+        credentials: "same-origin"
+      });
       if (!res.ok) return;
       const data = await res.json();
-      const rooms = Array.isArray(data.rooms) ? data.rooms : [];
-      const room = rooms.find((r) => String(r.slug || "").toLowerCase() === String(slug).toLowerCase());
+      const room = data && data.room ? data.room : null;
       if (!room) return;
 
       // Title + H1
@@ -78,8 +80,16 @@
 
       // Basic info
       if (room.size) setInfoByIcon("flaticon-maximize", room.size);
-      if (room.bed) setInfoByIcon("flaticon-bed-6", room.bed);
-      if (room.bathroom) setInfoByIcon("flaticon-bathing", room.bathroom);
+      if (room.bed) {
+        let bed = String(room.bed);
+        if (/^1\b/.test(bed) && /\bBeds\b/i.test(bed)) bed = bed.replace(/\bBeds\b/gi, "Bed");
+        setInfoByIcon("flaticon-bed-6", bed);
+      }
+      if (room.bathroom) {
+        let bath = String(room.bathroom);
+        if (/^1\b/.test(bath) && /\bBathrooms\b/i.test(bath)) bath = bath.replace(/\bBathrooms\b/gi, "Bathroom");
+        setInfoByIcon("flaticon-bathing", bath);
+      }
 
       // Description: replace the first paragraph under the main content area
       const p = document.querySelector("article .entry-content p");

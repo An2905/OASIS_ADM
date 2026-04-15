@@ -113,12 +113,12 @@ async function tryServeHtmlWithInjection(req, res, next) {
       if (!html.includes("/assets/site-en.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/site-en.js"></script>\n  <script defer src="/assets/room-detail-from-db.js"></script>\n</body>'
+          '  <script defer src="/assets/site-en.js?v=2"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=2"></script>\n</body>'
         );
       } else if (!html.includes("/assets/room-detail-from-db.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/room-detail-from-db.js"></script>\n</body>'
+          '  <script defer src="/assets/room-detail-from-db.js?v=2"></script>\n</body>'
         );
       }
 
@@ -205,6 +205,27 @@ app.get("/api/public/rooms", async (_req, res) => {
       included: r.included,
       images: r.images.map((img) => ({ url: img.url, alt: img.alt || "" }))
     }))
+  });
+});
+
+app.get("/api/public/room/:slug", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const slug = String(req.params.slug || "").toLowerCase();
+  const rooms = await listRooms();
+  const r = rooms.find((x) => x.slug === slug);
+  if (!r) return res.status(404).json({ error: "Not found" });
+  res.json({
+    room: {
+      slug: r.slug,
+      name: r.name,
+      size: r.size || "",
+      guests: 2,
+      bed: r.bed || "",
+      bathroom: r.bathroom || "",
+      description: r.description,
+      included: r.included,
+      images: r.images.map((img) => ({ url: img.url, alt: img.alt || "" }))
+    }
   });
 });
 
