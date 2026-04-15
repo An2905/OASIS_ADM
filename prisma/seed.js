@@ -40,6 +40,31 @@ async function main() {
       create: { key, value },
     });
   }
+
+  // Optional seed: a sample Deluxe room (only if not exists)
+  const deluxeSlug = "deluxe";
+  const existingDeluxe = await prisma.roomCategory.findUnique({ where: { slug: deluxeSlug } });
+  if (!existingDeluxe) {
+    await prisma.roomCategory.create({
+      data: {
+        slug: deluxeSlug,
+        name: "Deluxe",
+        size: "45 m²",
+        bed: "1 King bed",
+        bathroom: "1 bathroom",
+        description:
+          "Nestled amidst the resort’s lush gardens, the Deluxe room offers a calm retreat with elegant finishes and natural light.",
+        included: ["Private balcony", "140x200 cm Elite bed", "Air conditioning", "Free Wi‑Fi"].join("\n"),
+        images: {
+          create: Array.from({ length: 6 }, (_, i) => ({
+            sortOrder: i,
+            url: `/assets/room-concepts/deluxe-${i + 1}.jpg`,
+            alt: "Deluxe concept image"
+          }))
+        }
+      }
+    });
+  }
 }
 
 main()

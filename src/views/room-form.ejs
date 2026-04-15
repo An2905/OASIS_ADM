@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title><%= mode === 'create' ? 'New room' : 'Edit room' %></title>
+    <style>
+      body{ font-family: Arial, Helvetica, sans-serif; background:#0b1220; color:#e5e7eb; margin:0; }
+      .top{ position:sticky; top:0; background:rgba(7,10,17,.85); backdrop-filter: blur(10px); border-bottom:1px solid rgba(148,163,184,.18); padding:14px 18px; display:flex; align-items:center; justify-content:space-between; }
+      .wrap{ max-width: 1100px; margin:18px auto; padding: 0 16px 44px; }
+      .card{ border:1px solid rgba(148,163,184,.18); background:rgba(17,24,39,.78); border-radius:16px; padding:16px; }
+      .grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      @media (max-width: 860px){ .grid{ grid-template-columns: 1fr; } }
+      label{ display:block; margin:0 0 6px; color:#cbd5e1; font-size: 12px; }
+      input, textarea{ width:100%; padding:12px; border-radius:12px; border:1px solid rgba(148,163,184,.22); background:rgba(2,6,23,.55); color:#e5e7eb; }
+      textarea{ min-height: 120px; resize: vertical; }
+      .btn{ display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px; border:1px solid rgba(148,163,184,.22); background:rgba(2,6,23,.55); color:#e5e7eb; text-decoration:none; font-weight:800; cursor:pointer; }
+      .btnPrimary{ border:0; color:#06101a; background: linear-gradient(135deg, #a78bfa, #22d3ee); }
+      .muted{ color:#a3adc2; font-size: 13px; }
+      .err{ margin: 12px 0; padding: 10px 12px; background: rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.35); border-radius:12px; color:#fecaca; }
+      .sectionTitle{ margin: 12px 0 10px; font-size: 12px; letter-spacing:.12em; text-transform: uppercase; color:#dbeafe; }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <div style="font-weight:900"><%= mode === 'create' ? 'New room category' : 'Edit room category' %></div>
+      <div style="display:flex; gap:10px;">
+        <a class="btn" href="/admin/rooms">Back</a>
+        <a class="btn" href="/admin">CMS</a>
+      </div>
+    </div>
+
+    <div class="wrap">
+      <div class="card">
+        <div class="muted">
+          Amenities + Room amenities are fixed in UI (not stored here). You can edit: name, size, bed, bathroom, description, included, and concept images (6).
+        </div>
+
+        <% if (errors && (errors.formErrors?.length || Object.keys(errors.fieldErrors || {}).length)) { %>
+          <div class="err">
+            <div><strong>Fix the following:</strong></div>
+            <% (errors.formErrors || []).forEach((m) => { %>
+              <div>- <%= m %></div>
+            <% }) %>
+            <% Object.entries(errors.fieldErrors || {}).forEach(([k, arr]) => { %>
+              <div>- <%= k %>: <%= (arr || []).join(', ') %></div>
+            <% }) %>
+          </div>
+        <% } %>
+
+        <form method="post" action="<%= mode === 'create' ? '/admin/rooms' : ('/admin/rooms/' + room.id) %>">
+          <div class="grid" style="margin-top:12px;">
+            <div>
+              <label>Slug (kebab-case)</label>
+              <input name="slug" value="<%= room?.slug || '' %>" placeholder="deluxe" required />
+            </div>
+            <div>
+              <label>Name</label>
+              <input name="name" value="<%= room?.name || '' %>" placeholder="Deluxe" required />
+            </div>
+            <div>
+              <label>Size</label>
+              <input name="size" value="<%= room?.size || '' %>" placeholder="45 m²" />
+            </div>
+            <div>
+              <label>Bed</label>
+              <input name="bed" value="<%= room?.bed || '' %>" placeholder="1 King bed" />
+            </div>
+            <div>
+              <label>Bathroom</label>
+              <input name="bathroom" value="<%= room?.bathroom || '' %>" placeholder="1 bathroom with rain shower" />
+            </div>
+            <div></div>
+          </div>
+
+          <div class="sectionTitle">Description</div>
+          <textarea name="description" required><%= room?.description || '' %></textarea>
+
+          <div class="sectionTitle">Included (one per line)</div>
+          <textarea name="included" required placeholder="Private balcony&#10;140x200 cm Elite bed&#10;..."><%= room?.included || '' %></textarea>
+
+          <div class="sectionTitle">Concept images (exactly 6)</div>
+          <% const imgs = room?.images || []; %>
+          <div class="grid">
+            <% for (let i = 0; i < 6; i++) { %>
+              <div>
+                <label>Image <%= i+1 %> URL</label>
+                <input name="image<%= i+1 %>Url" value="<%= imgs[i]?.url || '' %>" placeholder="/assets/uploads/...jpg or https://..." required />
+                <label style="margin-top:8px;">Image <%= i+1 %> alt (optional)</label>
+                <input name="image<%= i+1 %>Alt" value="<%= imgs[i]?.alt || '' %>" placeholder="Deluxe room concept" />
+              </div>
+            <% } %>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+            <button class="btn btnPrimary" type="submit"><%= mode === 'create' ? 'Create room' : 'Save changes' %></button>
+            <a class="btn" href="/admin/rooms">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </body>
+</html>
+

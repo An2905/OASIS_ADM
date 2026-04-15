@@ -10,6 +10,15 @@ import dotenv from "dotenv";
 
 import { requireAdmin, verifyLogin } from "./auth.js";
 import { getPublicSettings, upsertPublicSettings, PublicSettingsSchema } from "./settings.js";
+import {
+  createRoom,
+  deleteRoom,
+  getRoomById,
+  listRooms,
+  normalizeRoomInput,
+  RoomCategoryInputSchema,
+  updateRoom
+} from "./rooms.js";
 
 dotenv.config();
 
@@ -229,6 +238,91 @@ app.post("/admin/settings", requireAdmin, async (req, res) => {
 });
 
 app.get("/healthz", (_req, res) => res.json({ ok: true }));
+
+// --- Rooms (CRUD) ---
+app.get("/admin/rooms", requireAdmin, async (_req, res) => {
+  const rooms = await listRooms();
+  res.render("rooms", { rooms });
+});
+
+app.get("/admin/rooms/new", requireAdmin, (_req, res) => {
+  res.render("room-form", {
+    mode: "create",
+    room: null,
+    errors: null
+  });
+});
+
+app.post("/admin/rooms", requireAdmin, async (req, res) => {
+  const input = normalizeRoomInput(req.body);
+  const parsed = RoomCategoryInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return res.status(400).render("room-form", {
+      mode: "create",
+      room: input,
+      errors: parsed.error.flatten()
+    });
+  }
+
+  try {
+    await createRoom(parsed.data);
+    res.redirect("/admin/rooms");
+  } catch (e) {
+    return res.status(400).render("room-form", {
+      mode: "create",
+      room: input,
+      errors: { formErrors: ["Failed to create room. Slug may already exist."], fieldErrors: {} }
+    });
+  }
+});
+
+app.get("/admin/rooms/:id/edit", requireAdmin, async (req, res) => {
+  const room = await getRoomById(req.params.id);
+  if (!room) return res.status(404).send("Room not found");
+  res.render("room-form", {
+    mode: "edit",
+    room: {
+      id: room.id,
+      slug: room.slug,
+      name: room.name,
+      size: room.size || "",
+      bed: room.bed || "",
+      bathroom: room.bathroom || "",
+      description: room.description,
+      included: room.included,
+      images: room.images.map((img) => ({ url: img.url, alt: img.alt || "" }))
+    },
+    errors: null
+  });
+});
+
+app.post("/admin/rooms/:id", requireAdmin, async (req, res) => {
+  const input = normalizeRoomInput(req.body);
+  const parsed = RoomCategoryInputSchema.safeParse(input);
+  if (!parsed.success) {
+    return res.status(400).render("room-form", {
+      mode: "edit",
+      room: { id: req.params.id, ...input },
+      errors: parsed.error.flatten()
+    });
+  }
+
+  try {
+    await updateRoom(req.params.id, parsed.data);
+    res.redirect("/admin/rooms");
+  } catch (e) {
+    return res.status(400).render("room-form", {
+      mode: "edit",
+      room: { id: req.params.id, ...input },
+      errors: { formErrors: ["Failed to update room. Slug may already exist."], fieldErrors: {} }
+    });
+  }
+});
+
+app.post("/admin/rooms/:id/delete", requireAdmin, async (req, res) => {
+  await deleteRoom(req.params.id);
+  res.redirect("/admin/rooms");
+});
 
 // --- Public root ---
 // Root HTML is served via the HTML injection middleware above.
