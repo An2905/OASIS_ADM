@@ -33,13 +33,9 @@
         padding:28px 16px;
       }
       .wrap{
-        width:min(940px, 100%);
-        display:grid;
-        grid-template-columns: 1.2fr .9fr;
-        gap:18px;
-        align-items:stretch;
+        width:min(560px, 100%);
+        display:block;
       }
-      @media (max-width: 860px){ .wrap{ grid-template-columns: 1fr; } }
       .panel{
         border:1px solid var(--stroke);
         background: var(--card);
@@ -121,20 +117,6 @@
         border-radius:14px;
         color:#fecaca;
       }
-      .right{
-        padding:22px;
-        display:flex;
-        flex-direction:column;
-        justify-content:space-between;
-      }
-      .k{
-        border:1px solid var(--stroke);
-        background: rgba(2,6,23,.35);
-        border-radius:16px;
-        padding:14px 14px;
-      }
-      .k h3{ margin:0 0 8px; font-size:14px; color:#e2e8f0; }
-      .k p{ margin:0; font-size:12px; color:var(--muted); line-height:1.6; }
       .mono{
         font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         font-size:12px;
@@ -169,21 +151,6 @@
 
         <div class="hint">
           Tip: set biến môi trường <span class="mono">ADMIN_EMAIL</span>, <span class="mono">ADMIN_PASSWORD</span> trên Railway để đổi tài khoản.
-        </div>
-      </div>
-
-      <div class="panel right">
-        <div class="k">
-          <h3>Truy cập nhanh</h3>
-          <p>Mở website ở tab mới để xem thay đổi sau khi lưu settings.</p>
-          <p style="margin-top:10px">
-            <a class="mono" href="/" target="_blank" rel="noreferrer">/ (Website)</a><br/>
-            <a class="mono" href="/admin" target="_blank" rel="noreferrer">/admin (Dashboard)</a>
-          </p>
-        </div>
-        <div class="k">
-          <h3>Bảo mật</h3>
-          <p>Không share mật khẩu admin. Nếu nghi lộ, đổi <span class="mono">ADMIN_PASSWORD</span> và redeploy.</p>
         </div>
       </div>
     </div>

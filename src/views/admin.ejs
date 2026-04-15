@@ -54,8 +54,7 @@
       .brandTitle{ font-weight:900; letter-spacing:.2px; }
       .muted{ color:var(--muted); font-size: 13px; }
       .wrap{ max-width: 1100px; margin: 18px auto; padding: 0 16px 44px; }
-      .layout{ display:grid; grid-template-columns: 1fr 320px; gap:16px; align-items:start; }
-      @media (max-width: 980px){ .layout{ grid-template-columns: 1fr; } }
+      .layout{ display:block; }
       .card{
         padding: 18px;
         border:1px solid var(--stroke);
@@ -279,27 +278,6 @@
               <a class="btn" href="/admin">Reset form</a>
             </div>
           </form>
-        </div>
-
-        <div style="display:grid; gap:12px;">
-          <div class="card">
-            <h2 class="sectionTitle">Trạng thái</h2>
-            <div class="k">
-              <h3>Endpoint</h3>
-              <p><span class="mono">GET /api/public/settings</span> (public)</p>
-              <p style="margin-top:8px"><span class="mono">/healthz</span> để check service sống.</p>
-            </div>
-          </div>
-          <div class="card">
-            <h2 class="sectionTitle">Gợi ý</h2>
-            <div class="k">
-              <h3>Lưu & xem nhanh</h3>
-              <p>Sau khi lưu, refresh tab website để thấy thay đổi ngay.</p>
-              <p style="margin-top:10px">
-                <a class="mono" href="/" target="_blank" rel="noreferrer">Mở website</a>
-              </p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
