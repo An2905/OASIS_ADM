@@ -14,6 +14,15 @@
       '<div class="posts-wrapper cs-rooms-wrapper">' +
       rooms
         .map(function (r) {
+          var bedLabel = String(r.bed || "").trim();
+          if (/^1\b/.test(bedLabel) && /\bBeds\b/.test(bedLabel)) {
+            bedLabel = bedLabel.replace(/\bBeds\b/g, "Bed");
+          }
+          var bathLabel = String(r.bathroom || "").trim();
+          if (/^1\b/.test(bathLabel) && /\bBathrooms\b/.test(bathLabel)) {
+            bathLabel = bathLabel.replace(/\bBathrooms\b/g, "Bathroom");
+          }
+
           var imgs = Array.isArray(r.images) ? r.images.slice(0, 6) : [];
           while (imgs.length < 6) imgs.push("");
           var gallery =
@@ -59,10 +68,10 @@
             esc(r.guests) +
             " Guests</span></li>" +
             '<li><div class="csrbi-icon"><i class="flaticon flaticon-bed-6"></i></div><span class="csrbi-text">' +
-            esc(r.bed) +
+            esc(bedLabel) +
             "</span></li>" +
             '<li><div class="csrbi-icon"><i class="flaticon flaticon-bathing"></i></div><span class="csrbi-text">' +
-            esc(r.bathroom) +
+            esc(bathLabel) +
             "</span></li>" +
             "</ul></div>" +
             "</header>" +
