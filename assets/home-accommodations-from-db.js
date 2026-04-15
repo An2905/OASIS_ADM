@@ -29,93 +29,86 @@
     return { posts, wrapper };
   };
 
+  const setText = (el, text) => {
+    if (!el) return;
+    el.textContent = String(text ?? "");
+  };
+
+  const setHref = (el, href) => {
+    if (!el) return;
+    el.setAttribute("href", href);
+  };
+
+  const setImg = (imgEl, url) => {
+    if (!imgEl) return;
+    const u = String(url || "").trim();
+    if (!u) return;
+    imgEl.setAttribute("src", u);
+    // Avoid stale responsive sources from cloned nodes.
+    imgEl.removeAttribute("srcset");
+    imgEl.removeAttribute("sizes");
+  };
+
+  const applyRoomToNode = (postEl, r) => {
+    const href = `/room/${String(r.slug || "").toLowerCase()}/`;
+    const imgUrl = Array.isArray(r.images) && r.images[0] ? r.images[0] : "";
+    const size = normalizeSize(r.size);
+    const bed = normalizeBed(r.bed);
+    const guests = r.guests || 2;
+
+    postEl.classList.remove("hide");
+
+    const featuredA = postEl.querySelector(".featured-img a");
+    setHref(featuredA, href);
+
+    const titleA = postEl.querySelector("h2.post-title a");
+    setHref(titleA, href);
+    setText(titleA, r.name || "");
+
+    const moreA = postEl.querySelector("a.read-more-btn");
+    setHref(moreA, href);
+
+    const imgEl = postEl.querySelector(".featured-img img");
+    setImg(imgEl, imgUrl);
+
+    const infoLis = postEl.querySelectorAll(".cs-room-basic-info ul li .csrbi-text");
+    if (infoLis && infoLis.length >= 3) {
+      setText(infoLis[0], size);
+      setText(infoLis[1], `${guests} Guests`);
+      setText(infoLis[2], bed);
+    }
+
+    const excerptP = postEl.querySelector(".post-excerpt p");
+    setText(excerptP, r.description || "");
+  };
+
   const render = (rooms) => {
     const found = findCarouselWrapper();
     if (!found || !found.wrapper) return;
 
-    // If theme carousel JS doesn't re-init after DOM swap,
-    // enforce a 3-column grid so it doesn't become a vertical list.
-    if (found.posts && !found.posts.classList.contains("cms-db-home")) {
-      found.posts.classList.add("cms-db-home");
-      if (!document.getElementById("cms-db-home-rooms-style")) {
-        const style = document.createElement("style");
-        style.id = "cms-db-home-rooms-style";
-        style.textContent = `
-          .posts.cs-rooms.cs-rooms-carousel.cms-db-home .posts-wrapper.cs-rooms-wrapper{
-            display:grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 30px;
-          }
-          @media (max-width: 1024px){
-            .posts.cs-rooms.cs-rooms-carousel.cms-db-home .posts-wrapper.cs-rooms-wrapper{
-              grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-          }
-          @media (max-width: 640px){
-            .posts.cs-rooms.cs-rooms-carousel.cms-db-home .posts-wrapper.cs-rooms-wrapper{
-              grid-template-columns: 1fr;
-            }
-          }
-          .posts.cs-rooms.cs-rooms-carousel.cms-db-home .featured-img img{
-            width:100%;
-            aspect-ratio: 1 / 1;
-            object-fit: cover;
-            display:block;
-          }
-        `;
-        document.head.appendChild(style);
-      }
+    // IMPORTANT: don't replace wrapper HTML; it breaks theme/carousel layout.
+    // Instead update existing nodes (and clone if we need more).
+    const existing = Array.from(found.wrapper.querySelectorAll(".post.cs-room-item"));
+    if (!existing.length) return;
+
+    const template = existing[0];
+
+    // Ensure we have enough nodes
+    while (existing.length < rooms.length) {
+      const clone = template.cloneNode(true);
+      found.wrapper.appendChild(clone);
+      existing.push(clone);
     }
 
-    found.wrapper.innerHTML = rooms
-      .map((r) => {
-        const img = Array.isArray(r.images) && r.images[0] ? r.images[0] : "";
-        const size = normalizeSize(r.size);
-        const bed = normalizeBed(r.bed);
-        const guests = r.guests || 2;
+    // Apply rooms
+    for (let i = 0; i < rooms.length; i++) {
+      applyRoomToNode(existing[i], rooms[i]);
+    }
 
-        return (
-          '<div class="post cs-room-item has-post-thumbnail">' +
-          '<div class="featured-img">' +
-          '<a href="/room/' +
-          esc(r.slug) +
-          '/" aria-label="Room Featured Image">' +
-          (img
-            ? '<img loading="lazy" decoding="async" src="' + esc(img) + '" alt="" />'
-            : "") +
-          "</a>" +
-          "</div>" +
-          '<div class="post-content cs-room-content">' +
-          '<header class="post-header item-header">' +
-          '<h2 class="post-title item-title"><a href="/room/' +
-          esc(r.slug) +
-          '/">' +
-          esc(r.name) +
-          "</a></h2>" +
-          '<div class="cs-room-basic-info"><ul>' +
-          '<li><div class="csrbi-icon"><i class="flaticon flaticon-maximize"></i></div><span class="csrbi-text">' +
-          esc(size) +
-          "</span></li>" +
-          '<li><div class="csrbi-icon"><i class="flaticon flaticon-user-2"></i></div><span class="csrbi-text">' +
-          esc(guests) +
-          " Guests</span></li>" +
-          '<li><div class="csrbi-icon"><i class="flaticon flaticon-bed-6"></i></div><span class="csrbi-text">' +
-          esc(bed) +
-          "</span></li>" +
-          "</ul></div>" +
-          "</header>" +
-          (r.description
-            ? '<div class="post-excerpt item-excerpt"><p>' + esc(r.description) + "</p></div>"
-            : "") +
-          '<footer class="post-footer item-footer"><div class="more-btn">' +
-          '<a class="read-more-btn button cs-btn-underline" href="/room/' +
-          esc(r.slug) +
-          '/"><span>Discover More</span></a>' +
-          "</div></footer>" +
-          "</div></div>"
-        );
-      })
-      .join("");
+    // Hide extras
+    for (let i = rooms.length; i < existing.length; i++) {
+      existing[i].classList.add("hide");
+    }
   };
 
   async function init() {
