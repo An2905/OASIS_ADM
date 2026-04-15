@@ -18,6 +18,9 @@ const rootDir = path.resolve(__dirname, "..");
 
 const app = express();
 
+// Railway/Reverse-proxy friendly (needed for secure cookies)
+app.set("trust proxy", 1);
+
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
@@ -80,16 +83,23 @@ app.get("/api/public/settings", async (_req, res) => {
 
 // --- Admin ---
 app.get("/admin/login", (req, res) => {
-  res.render("login", { error: req.query.error ? "Invalid credentials" : null });
+  let message = null;
+  if (req.query.error) message = "Invalid credentials";
+  if (req.query.db) message = "Database is not ready. Please check Railway Postgres + DATABASE_URL and redeploy.";
+  res.render("login", { error: message });
 });
 
 app.post("/admin/login", async (req, res) => {
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
-  const user = await verifyLogin(email, password);
-  if (!user) return res.redirect("/admin/login?error=1");
-  req.session.admin = { id: user.id, email: user.email };
-  res.redirect("/admin");
+  try {
+    const user = await verifyLogin(email, password);
+    if (!user) return res.redirect("/admin/login?error=1");
+    req.session.admin = { id: user.id, email: user.email };
+    res.redirect("/admin");
+  } catch (_e) {
+    res.redirect("/admin/login?db=1");
+  }
 });
 
 app.post("/admin/logout", (req, res) => {
@@ -97,8 +107,12 @@ app.post("/admin/logout", (req, res) => {
 });
 
 app.get("/admin", requireAdmin, async (_req, res) => {
-  const settings = await getPublicSettings();
-  res.render("admin", { settings, errors: null, saved: false });
+  try {
+    const settings = await getPublicSettings();
+    res.render("admin", { settings, errors: null, saved: false });
+  } catch (e) {
+    res.status(500).send("Admin unavailable: database not ready.");
+  }
 });
 
 app.post("/admin/settings", requireAdmin, async (req, res) => {
@@ -122,21 +136,39 @@ app.post("/admin/settings", requireAdmin, async (req, res) => {
 
   const parsed = PublicSettingsSchema.safeParse(raw);
   if (!parsed.success) {
-    const settings = await getPublicSettings();
-    return res.status(400).render("admin", {
-      settings: { ...settings, ...raw },
-      errors: parsed.error.flatten(),
-      saved: false
-    });
+    try {
+      const settings = await getPublicSettings();
+      return res.status(400).render("admin", {
+        settings: { ...settings, ...raw },
+        errors: parsed.error.flatten(),
+        saved: false
+      });
+    } catch (e) {
+      return res.status(500).send("Admin unavailable: database not ready.");
+    }
   }
 
-  const settings = await upsertPublicSettings(parsed.data);
-  res.render("admin", { settings, errors: null, saved: true });
+  try {
+    const settings = await upsertPublicSettings(parsed.data);
+    res.render("admin", { settings, errors: null, saved: true });
+  } catch (e) {
+    res.status(500).send("Failed to save settings: database not ready.");
+  }
 });
+
+app.get("/healthz", (_req, res) => res.json({ ok: true }));
 
 // --- Public root ---
 app.get("/", (_req, res) => {
   res.sendFile(path.join(rootDir, "index.html"));
+});
+
+// Final error handler (avoid blank 500)
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  // eslint-disable-next-line no-console
+  console.error(err);
+  res.status(500).send("Internal Server Error");
 });
 
 const port = Number(process.env.PORT || 3000);
