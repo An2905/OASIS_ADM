@@ -15,12 +15,12 @@
       rooms
         .map(function (r) {
           var bedLabel = String(r.bed || "").trim();
-          if (/^1\b/.test(bedLabel) && /\bBeds\b/.test(bedLabel)) {
-            bedLabel = bedLabel.replace(/\bBeds\b/g, "Bed");
+          if (/^1\b/.test(bedLabel) && /\bBeds\b/i.test(bedLabel)) {
+            bedLabel = bedLabel.replace(/\bBeds\b/gi, "Bed");
           }
           var bathLabel = String(r.bathroom || "").trim();
-          if (/^1\b/.test(bathLabel) && /\bBathrooms\b/.test(bathLabel)) {
-            bathLabel = bathLabel.replace(/\bBathrooms\b/g, "Bathroom");
+          if (/^1\b/.test(bathLabel) && /\bBathrooms\b/i.test(bathLabel)) {
+            bathLabel = bathLabel.replace(/\bBathrooms\b/gi, "Bathroom");
           }
 
           var imgs = Array.isArray(r.images) ? r.images.slice(0, 6) : [];

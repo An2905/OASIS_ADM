@@ -192,6 +192,7 @@ for (const dir of pageDirs) {
 
 // --- Public API for client-side CMS injection ---
 app.get("/api/public/settings", async (_req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   try {
     const settings = await getPublicSettings();
     res.json({
