@@ -66,5 +66,48 @@
   document.addEventListener("wpcf7mailfailed", (ev) => applyCf7(ev.target));
   document.addEventListener("wpcf7failed", (ev) => applyCf7(ev.target));
   document.addEventListener("wpcf7spam", (ev) => applyCf7(ev.target));
+
+  // Fix reservation guest summary text (some exports show "Guests Adult, 0 Children")
+  const normalizeGuestSummary = (s) => {
+    let x = String(s || "").replace(/\s+/g, " ").trim();
+    if (!x) return x;
+
+    // If it starts with "Guests", drop that prefix (UI already indicates it's guests)
+    x = x.replace(/^Guests?\s*/i, "");
+
+    // If adult count is missing, assume 1 (common default)
+    // Examples:
+    // - "Adult, 0 Children" -> "1 Adult, 0 Children"
+    // - "Adults, 0 Children" -> "1 Adult, 0 Children"
+    if (/^(Adult|Adults)\s*,/i.test(x)) x = x.replace(/^(Adult|Adults)\s*,/i, "1 Adult,");
+
+    // Normalize pluralization: "1 Adults" -> "1 Adult", "1 Children" -> "1 Child"
+    x = x.replace(/\b1\s+Adults\b/i, "1 Adult");
+    x = x.replace(/\b1\s+Children\b/i, "1 Child");
+
+    return x;
+  };
+
+  const fixGuestInputs = (root) => {
+    const scope = root && root.querySelectorAll ? root : document;
+    scope.querySelectorAll('input[id$="-guests"][readonly], input[id*="-guests"][readonly]').forEach((inp) => {
+      const v = inp.value;
+      const next = normalizeGuestSummary(v);
+      if (next && next !== v) inp.value = next;
+    });
+  };
+
+  // Run once and keep in sync if scripts update values later.
+  fixGuestInputs(document);
+  const mo = new MutationObserver(() => fixGuestInputs(document));
+  mo.observe(document.documentElement, { subtree: true, childList: true });
+  document.addEventListener(
+    "input",
+    (e) => {
+      const t = e.target;
+      if (t && t.tagName === "INPUT") fixGuestInputs(document);
+    },
+    true
+  );
 })();
 

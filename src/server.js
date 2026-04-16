@@ -140,7 +140,7 @@ async function tryServeHtmlWithInjection(req, res, next) {
       if (!html.includes("/assets/site-en.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/site-en.js?v=2"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=4"></script>\n  <script defer src="/assets/home-accommodations-from-db.js?v=8"></script>\n</body>'
+          '  <script defer src="/assets/site-en.js?v=3"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=4"></script>\n  <script defer src="/assets/home-accommodations-from-db.js?v=8"></script>\n</body>'
         );
       } else if (!html.includes("/assets/room-detail-from-db.js")) {
         html = html.replace(
@@ -516,7 +516,7 @@ app.get("/room/:slug/", async (req, res, next) => {
     if (!html.includes("/assets/site-en.js")) {
       html = html.replace(
         /<\/body\s*>/i,
-        '  <script defer src="/assets/site-en.js?v=2"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=4"></script>\n</body>'
+        '  <script defer src="/assets/site-en.js?v=3"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=4"></script>\n</body>'
       );
     } else if (!html.includes("/assets/room-detail-from-db.js")) {
       html = html.replace(
