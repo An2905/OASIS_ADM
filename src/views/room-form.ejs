@@ -263,6 +263,8 @@
           const { url } = await uploadBlob(blob);
           setUrl(i, url);
           setThumb(i, url);
+        } catch (e) {
+          alert("Image upload failed. Please try again.");
         } finally {
           if (drop) drop.classList.remove("drag");
         }

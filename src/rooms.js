@@ -21,7 +21,21 @@ export const RoomCategoryInputSchema = z.object({
   images: z.array(RoomImageInputSchema).length(6, "Exactly 6 concept images are required.")
 });
 
+function slugify(input) {
+  return String(input || "")
+    .trim()
+    .toLowerCase()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
+}
+
 export function normalizeRoomInput(raw) {
+  const name = String(raw.name || "").trim();
+  const rawSlug = String(raw.slug || "").trim();
+  const slug = slugify(rawSlug || name);
+
   const images = Array.from({ length: 6 }, (_, idx) => {
     const i = idx + 1;
     return {
@@ -31,8 +45,8 @@ export function normalizeRoomInput(raw) {
   });
 
   return {
-    slug: String(raw.slug || "").trim().toLowerCase(),
-    name: String(raw.name || "").trim(),
+    slug,
+    name,
     size: String(raw.size || "").trim(),
     bed: String(raw.bed || "").trim(),
     bathroom: String(raw.bathroom || "").trim(),
