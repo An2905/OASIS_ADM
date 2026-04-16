@@ -63,14 +63,12 @@
         const u = urls[i];
         if (!u) continue;
         img.setAttribute("src", u);
-        // Prevent old responsive candidates from keeping deluxe images
-        img.removeAttribute("srcset");
-        img.removeAttribute("sizes");
-        img.closest(".cs-gallery-item")?.classList.remove("hide");
-      }
-      // Hide extra slides (keep DOM stable for slick)
-      for (let i = urls.length; i < themeImgs.length; i++) {
-        themeImgs[i].closest(".cs-gallery-item")?.classList.add("hide");
+        // If we're swapping to DB-uploaded media, remove WP responsive candidates
+        // so the browser doesn't keep showing old /wp-content images.
+        if (String(u).startsWith("/media/")) {
+          img.removeAttribute("srcset");
+          img.removeAttribute("sizes");
+        }
       }
       return;
     }
