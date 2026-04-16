@@ -23,28 +23,20 @@
             bathLabel = bathLabel.replace(/\bBathrooms\b/gi, "Bathroom");
           }
 
-          var imgs = Array.isArray(r.images) ? r.images.slice(0, 6) : [];
-          while (imgs.length < 6) imgs.push("");
+          // IMPORTANT: match theme markup on /stay/ so images display reliably.
+          // Use the first concept image as the featured image.
+          var featured = Array.isArray(r.images) && r.images[0] ? String(r.images[0]) : "";
           var gallery =
             '<div class="featured-img">' +
             '<a href="/room/' +
             esc(r.slug) +
             '/" aria-label="Room Featured Image">' +
-            '<ul class="thumbnail-gallery">' +
-            imgs
-              .map(function (src) {
-                if (!src) return "<li></li>";
-                return (
-                  "<li><img loading=\"lazy\" decoding=\"async\" src=\"" +
-                  esc(src) +
-                  "\" alt=\"\" /></li>"
-                );
-              })
-              .join("") +
-            "</ul>" +
+            (featured
+              ? '<img loading="lazy" decoding="async" width="780" height="520" src="' +
+                esc(featured) +
+                '" class="attachment-cozystay_780x9999 size-cozystay_780x9999" alt="" />'
+              : "") +
             "</a>" +
-            '<div class="slider-arrows"></div>' +
-            '<div class="slider-dots"></div>' +
             "</div>";
 
           return (
