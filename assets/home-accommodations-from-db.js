@@ -112,6 +112,12 @@
       const rooms = Array.isArray(data.rooms) ? data.rooms : [];
       const active = rooms.filter((r) => r && r.status === "ACTIVE");
       if (!active.length) return;
+      // Ensure "newest" rooms show up first on home carousel
+      active.sort((a, b) => {
+        const at = Date.parse(a.updatedAt || a.createdAt || "") || 0;
+        const bt = Date.parse(b.updatedAt || b.createdAt || "") || 0;
+        return bt - at;
+      });
       render(active);
     } catch {
       // ignore

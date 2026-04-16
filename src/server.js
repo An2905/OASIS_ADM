@@ -140,7 +140,7 @@ async function tryServeHtmlWithInjection(req, res, next) {
       if (!html.includes("/assets/site-en.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/site-en.js?v=2"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=2"></script>\n  <script defer src="/assets/home-accommodations-from-db.js?v=7"></script>\n</body>'
+          '  <script defer src="/assets/site-en.js?v=2"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=2"></script>\n  <script defer src="/assets/home-accommodations-from-db.js?v=8"></script>\n</body>'
         );
       } else if (!html.includes("/assets/room-detail-from-db.js")) {
         html = html.replace(
@@ -150,7 +150,7 @@ async function tryServeHtmlWithInjection(req, res, next) {
       } else if (!html.includes("/assets/home-accommodations-from-db.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/home-accommodations-from-db.js?v=7"></script>\n</body>'
+          '  <script defer src="/assets/home-accommodations-from-db.js?v=8"></script>\n</body>'
         );
       }
 
@@ -217,6 +217,8 @@ app.get("/api/rooms", async (_req, res) => {
       bed: r.bed || "",
       bathroom: r.bathroom || "",
       description: r.description,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
       images: r.images.map((img) => img.url),
       status: "ACTIVE"
     }))
@@ -236,6 +238,8 @@ app.get("/api/public/rooms", async (_req, res) => {
       bathroom: r.bathroom || "",
       description: r.description,
       included: r.included,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
       images: r.images.map((img) => ({ url: img.url, alt: img.alt || "" }))
     }))
   });
@@ -477,25 +481,32 @@ app.post("/admin/rooms/:id/delete", requireAdmin, async (req, res) => {
 
 // --- Public room details (DB-backed fallback) ---
 app.get("/room/:slug/", async (req, res, next) => {
-  // If a static file exists, static middleware already served it.
   const slug = String(req.params.slug || "").toLowerCase();
   try {
     const rooms = await listRooms();
     const room = rooms.find((r) => r.slug === slug);
     if (!room) return next();
-    res.render("room-public", {
-      room: {
-        slug: room.slug,
-        name: room.name,
-        size: room.size || "",
-        guests: 2,
-        bed: room.bed || "",
-        bathroom: room.bathroom || "",
-        description: room.description,
-        included: room.included.split("\n").map((x) => x.trim()).filter(Boolean),
-        images: room.images.map((img) => ({ url: img.url, alt: img.alt || "" }))
-      }
-    });
+
+    // Serve a theme-consistent room template, then let client script sync content from DB.
+    const templatePath = path.join(rootDir, "room", "deluxe", "index.html");
+    let html = await fs.readFile(templatePath, "utf8");
+
+    // Ensure our sync scripts are present (same injection logic as static pages).
+    if (!html.includes("/assets/site-en.js")) {
+      html = html.replace(
+        /<\/body\s*>/i,
+        '  <script defer src="/assets/site-en.js?v=2"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=2"></script>\n</body>'
+      );
+    } else if (!html.includes("/assets/room-detail-from-db.js")) {
+      html = html.replace(
+        /<\/body\s*>/i,
+        '  <script defer src="/assets/room-detail-from-db.js?v=2"></script>\n</body>'
+      );
+    }
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader("Cache-Control", "no-store");
+    return res.status(200).send(html);
   } catch {
     return next();
   }
