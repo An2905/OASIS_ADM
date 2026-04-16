@@ -9,8 +9,12 @@
       .replace(/'/g, "&#039;");
 
   const normalizeBed = (bed) => {
-    let b = String(bed || "").trim();
-    if (/^1\b/.test(b) && /\bBeds\b/i.test(b)) b = b.replace(/\bBeds\b/gi, "Bed");
+    let b = String(bed || "").replace(/\s+/g, " ").trim();
+    // If leading count is 1, force singular "Bed"
+    const m = b.match(/^(\d+)/);
+    if (m && Number(m[1]) === 1) {
+      b = b.replace(/\bBeds?\b/gi, "Bed");
+    }
     return b;
   };
 
