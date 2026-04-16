@@ -50,16 +50,36 @@
       .replace(/'/g, "&#039;");
 
   const setGallery = (images) => {
-    // Try update the first thumbnail-gallery on page (hero gallery).
-    const gal = document.querySelector("ul.thumbnail-gallery");
-    if (!gal) return;
     const urls = (images || []).map((x) => (typeof x === "string" ? x : x?.url)).filter(Boolean).slice(0, 6);
     if (!urls.length) return;
+
+    // Theme room pages use a slick carousel: .room-top-section .cs-gallery-item img
+    const themeImgs = Array.from(
+      document.querySelectorAll(".room-top-section .cs-gallery-item img")
+    );
+    if (themeImgs.length) {
+      for (let i = 0; i < themeImgs.length && i < urls.length; i++) {
+        const img = themeImgs[i];
+        const u = urls[i];
+        if (!u) continue;
+        img.setAttribute("src", u);
+        // Prevent old responsive candidates from keeping deluxe images
+        img.removeAttribute("srcset");
+        img.removeAttribute("sizes");
+        img.closest(".cs-gallery-item")?.classList.remove("hide");
+      }
+      // Hide extra slides (keep DOM stable for slick)
+      for (let i = urls.length; i < themeImgs.length; i++) {
+        themeImgs[i].closest(".cs-gallery-item")?.classList.add("hide");
+      }
+      return;
+    }
+
+    // Fallback for other pages that use thumbnail-gallery
+    const gal = document.querySelector("ul.thumbnail-gallery");
+    if (!gal) return;
     gal.innerHTML = urls
-      .map(
-        (u) =>
-          `<li><img loading="lazy" decoding="async" src="${escapeHtml(u)}" alt="" /></li>`
-      )
+      .map((u) => `<li><img loading="lazy" decoding="async" src="${escapeHtml(u)}" alt="" /></li>`)
       .join("");
   };
 
