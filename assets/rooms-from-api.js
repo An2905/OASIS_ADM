@@ -8,23 +8,39 @@
       .replace(/'/g, "&#039;");
   }
 
+  function pickImageCandidates(images) {
+    if (!Array.isArray(images)) return [];
+    var out = [];
+    for (var i = 0; i < images.length; i++) {
+      var u = String(images[i] || "").trim();
+      if (!u) continue;
+      if (u.indexOf("undefined") !== -1 || u.indexOf("null") !== -1) continue;
+      if (u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://")) out.push(u);
+      if (out.length >= 6) break;
+    }
+    return out;
+  }
+
+  function bindImageFallbacks(root) {
+    var imgs = root.querySelectorAll("img[data-fallback]");
+    imgs.forEach(function (img) {
+      img.addEventListener("error", function () {
+        var cur = String(img.getAttribute("src") || "").trim();
+        var fb = String(img.getAttribute("data-fallback") || "").split("|").filter(Boolean);
+        while (fb.length && fb[0] === cur) fb.shift();
+        if (!fb.length) return;
+        img.setAttribute("data-fallback", fb.slice(1).join("|"));
+        img.setAttribute("src", fb[0]);
+      });
+    });
+  }
+
   function renderRooms(container, rooms) {
     container.innerHTML =
       '<div class="posts cs-rooms text-center layout-zigzag layout-list img-ratio-3-2">' +
       '<div class="posts-wrapper cs-rooms-wrapper">' +
       rooms
         .map(function (r) {
-          function pickFeatured(images) {
-            if (!Array.isArray(images)) return "";
-            for (var i = 0; i < images.length; i++) {
-              var u = String(images[i] || "").trim();
-              if (!u) continue;
-              if (u.indexOf("undefined") !== -1 || u.indexOf("null") !== -1) continue;
-              if (u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://")) return u;
-            }
-            return "";
-          }
-
           var bedLabel = String(r.bed || "").trim();
           if (/^1\b/.test(bedLabel) && /\bBeds\b/i.test(bedLabel)) {
             bedLabel = bedLabel.replace(/\bBeds\b/gi, "Bed");
@@ -36,7 +52,9 @@
 
           // IMPORTANT: match theme markup on /stay/ so images display reliably.
           // Use the first concept image as the featured image.
-          var featured = pickFeatured(r.images);
+          var candidates = pickImageCandidates(r.images);
+          var featured = candidates[0] ? String(candidates[0]) : "";
+          var fallbacks = candidates.length > 1 ? candidates.slice(1).join("|") : "";
           var gallery =
             '<div class="featured-img">' +
             '<a href="/room/' +
@@ -45,7 +63,9 @@
             (featured
               ? '<img loading="lazy" decoding="async" width="780" height="520" src="' +
                 esc(featured) +
-                '" class="attachment-cozystay_780x9999 size-cozystay_780x9999" alt="" />'
+                '" ' +
+                (fallbacks ? 'data-fallback="' + esc(fallbacks) + '" ' : "") +
+                'class="attachment-cozystay_780x9999 size-cozystay_780x9999" alt="" />'
               : "") +
             "</a>" +
             "</div>";
@@ -94,6 +114,8 @@
         })
         .join("") +
       "</div></div>";
+
+    bindImageFallbacks(container);
   }
 
   async function init() {
