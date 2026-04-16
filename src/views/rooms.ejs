@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Rooms</title>
+    <title>Hạng phòng</title>
     <style>
       :root{
         --bg0:#070a11;
@@ -88,30 +88,28 @@
       <div class="brand">
         <div class="logo" aria-hidden="true"></div>
         <div>
-          <div class="brandTitle">Room Categories</div>
-          <div class="muted">Manage room tiers shown on the public site</div>
+          <div class="brandTitle">Hạng phòng</div>
         </div>
       </div>
       <div style="display:flex; gap:10px;">
-        <a class="btn" href="/admin">Back to CMS</a>
-        <a class="btn btnPrimary" href="/admin/rooms/new">+ New room</a>
+        <a class="btn" href="/admin">Quay lại CMS</a>
+        <a class="btn btnPrimary" href="/admin/rooms/new">+ Thêm hạng phòng</a>
       </div>
     </div>
     <div class="wrap">
       <div class="card">
-        <div class="chip"><span class="dot"></span> Exactly 6 concept images per room</div>
         <table>
           <thead>
             <tr>
-              <th>Name</th>
+              <th>Tên</th>
               <th>Slug</th>
-              <th>Updated</th>
-              <th style="width:220px;">Actions</th>
+              <th>Cập nhật</th>
+              <th style="width:260px;">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             <% if (!rooms.length) { %>
-              <tr><td colspan="4" class="muted">No rooms yet.</td></tr>
+              <tr><td colspan="4" class="muted">Chưa có hạng phòng nào.</td></tr>
             <% } %>
             <% rooms.forEach((r) => { %>
               <tr>
@@ -120,9 +118,9 @@
                 <td class="muted"><%= new Date(r.updatedAt).toLocaleString() %></td>
                 <td>
                   <div class="rowActions">
-                    <a class="btn" href="/admin/rooms/<%= r.id %>/edit">Edit</a>
-                    <form method="post" action="/admin/rooms/<%= r.id %>/delete" onsubmit="return confirm('Delete this room?')">
-                      <button class="btn" type="submit">Delete</button>
+                    <a class="btn" href="/admin/rooms/<%= r.id %>/edit">Sửa</a>
+                    <form method="post" action="/admin/rooms/<%= r.id %>/delete" onsubmit="return confirm('Xoá hạng phòng này?')">
+                      <button class="btn" type="submit">Xoá</button>
                     </form>
                   </div>
                 </td>

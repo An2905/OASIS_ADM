@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin Login</title>
+    <title>Đăng nhập quản trị</title>
     <style>
       :root{
         --bg0:#070a11;
@@ -104,11 +104,6 @@
         transition: transform .08s ease, filter .2s ease;
       }
       button:active{ transform: translateY(1px) scale(.99); }
-      .hint{
-        margin-top: 14px;
-        font-size: 12px;
-        color: var(--muted);
-      }
       .err{
         margin-top: 12px;
         padding: 10px 12px;
@@ -129,7 +124,7 @@
       <div class="panel left">
         <div class="badge"><span class="dot"></span> Oasis CMS</div>
         <h1>Đăng nhập quản trị</h1>
-        <p class="sub">Chỉnh nội dung hiển thị trên website: hero, hotline, email, social links, footer…</p>
+        <p class="sub">Chỉnh nội dung hiển thị trên website: hero, hotline, email, mạng xã hội, footer…</p>
 
       <form method="post" action="/loginDN">
           <div class="field">
@@ -149,9 +144,6 @@
           <div class="err"><%= error %></div>
         <% } %>
 
-        <div class="hint">
-          Tip: set biến môi trường <span class="mono">ADMIN_EMAIL</span>, <span class="mono">ADMIN_PASSWORD</span> trên Railway để đổi tài khoản.
-        </div>
       </div>
     </div>
   </body>

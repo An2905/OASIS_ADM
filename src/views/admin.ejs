@@ -187,9 +187,6 @@
           <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:12px;">
             <div>
               <h2 class="sectionTitle">Nội dung chung</h2>
-              <p class="muted" style="margin:0">
-                Lưu xong thì refresh website để thấy thay đổi (cập nhật qua <span class="mono">/api/public/settings</span>).
-              </p>
             </div>
           </div>
 
@@ -204,7 +201,7 @@
           <form method="post" action="/admin/settings">
             <div class="grid">
               <div class="field">
-                <label>Site name</label>
+                <label>Tên website</label>
                 <input name="siteName" value="<%= settings.siteName %>" required />
               </div>
               <div class="field">
@@ -212,35 +209,35 @@
                 <input name="emailAddress" type="email" value="<%= settings.emailAddress %>" required />
               </div>
               <div class="field">
-                <label>Hotline label</label>
+                <label>Nhãn hotline</label>
                 <input name="hotlineLabel" value="<%= settings.hotlineLabel %>" required />
               </div>
               <div class="field">
-                <label>Hotline number</label>
+                <label>Số hotline</label>
                 <input name="hotlineNumber" value="<%= settings.hotlineNumber %>" required />
               </div>
             </div>
 
             <div style="margin-top:16px">
-              <h2 class="sectionTitle">Hero / thông báo</h2>
+              <h2 class="sectionTitle">Hero / Thông báo</h2>
               <div class="grid">
                 <div class="field">
-                  <label>Hero title</label>
+                  <label>Tiêu đề chính</label>
                   <input name="heroTitle" value="<%= settings.heroTitle %>" required />
                 </div>
                 <div class="field">
-                  <label>Hero note title</label>
+                  <label>Tiêu đề thông báo</label>
                   <input name="heroNoteTitle" value="<%= settings.heroNoteTitle %>" required />
                 </div>
               </div>
               <div class="field" style="margin-top:12px;">
-                <label>Hero note body</label>
+                <label>Nội dung thông báo</label>
                 <textarea name="heroNoteBody" required><%= settings.heroNoteBody %></textarea>
               </div>
             </div>
 
             <div style="margin-top:16px">
-              <h2 class="sectionTitle">Social links</h2>
+              <h2 class="sectionTitle">Liên kết mạng xã hội</h2>
               <div class="grid">
                 <div class="field">
                   <label>Facebook URL</label>

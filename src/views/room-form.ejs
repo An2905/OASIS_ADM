@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><%= mode === 'create' ? 'New room' : 'Edit room' %></title>
+    <title><%= mode === 'create' ? 'Thêm hạng phòng' : 'Sửa hạng phòng' %></title>
     <style>
       :root{
         --bg0:#070a11;
@@ -108,24 +108,20 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           <div class="brandTitle"><%= mode === 'create' ? 'New room category' : 'Edit room category' %></div>
-          <div class="muted">Fields here are editable; amenities blocks stay fixed in the theme.</div>
+          <div class="muted"><%= mode === 'create' ? 'Tạo hạng phòng mới' : 'Chỉnh sửa hạng phòng' %></div>
         </div>
       </div>
       <div style="display:flex; gap:10px;">
-        <a class="btn" href="/admin/rooms">Back</a>
+        <a class="btn" href="/admin/rooms">Quay lại</a>
         <a class="btn" href="/admin">CMS</a>
       </div>
     </div>
 
     <div class="wrap">
       <div class="card">
-        <div class="hint">
-          You can edit: name, size, bed, bathroom, description, included, and concept images (exactly 6). Amenities sections are fixed in the public layout.
-        </div>
-
         <% if (errors && (errors.formErrors?.length || Object.keys(errors.fieldErrors || {}).length)) { %>
           <div class="err">
-            <div><strong>Fix the following:</strong></div>
+            <div><strong>Vui lòng kiểm tra lại:</strong></div>
             <% (errors.formErrors || []).forEach((m) => { %>
               <div>- <%= m %></div>
             <% }) %>
@@ -138,52 +134,52 @@
         <form method="post" action="<%= mode === 'create' ? '/admin/rooms' : ('/admin/rooms/' + room.id) %>">
           <div class="grid" style="margin-top:12px;">
             <div>
-              <label>Slug (kebab-case)</label>
-              <input name="slug" value="<%= room?.slug || '' %>" placeholder="deluxe" required />
+              <label>Slug</label>
+              <input name="slug" value="<%= room?.slug || '' %>" placeholder="deluxe-bungalow" required />
             </div>
             <div>
-              <label>Name</label>
+              <label>Tên hạng phòng</label>
               <input name="name" value="<%= room?.name || '' %>" placeholder="Deluxe" required />
             </div>
             <div>
-              <label>Size</label>
+              <label>Diện tích</label>
               <input name="size" value="<%= room?.size || '' %>" placeholder="45 m²" />
             </div>
             <div>
-              <label>Bed</label>
-              <input name="bed" value="<%= room?.bed || '' %>" placeholder="1 King bed" />
+              <label>Giường</label>
+              <input name="bed" value="<%= room?.bed || '' %>" placeholder="1 King Bed" />
             </div>
             <div>
-              <label>Bathroom</label>
-              <input name="bathroom" value="<%= room?.bathroom || '' %>" placeholder="1 bathroom with rain shower" />
+              <label>Phòng tắm</label>
+              <input name="bathroom" value="<%= room?.bathroom || '' %>" placeholder="1 Bathroom" />
             </div>
             <div></div>
           </div>
 
-          <div class="sectionTitle">Description</div>
+          <div class="sectionTitle">Mô tả</div>
           <textarea name="description" required><%= room?.description || '' %></textarea>
 
-          <div class="sectionTitle">Included (one per line)</div>
+          <div class="sectionTitle">Included (mỗi dòng 1 ý)</div>
           <textarea name="included" required placeholder="Private balcony&#10;140x200 cm Elite bed&#10;..."><%= room?.included || '' %></textarea>
 
-          <div class="sectionTitle">Concept images (exactly 6)</div>
+          <div class="sectionTitle">Ảnh concept (đúng 6 ảnh)</div>
           <% const imgs = room?.images || []; %>
           <div class="grid">
             <% for (let i = 0; i < 6; i++) { %>
               <div>
-                <label>Image <%= i+1 %> URL</label>
+                <label>Ảnh <%= i+1 %> (URL)</label>
                 <input class="js-img-url" data-index="<%= i %>" name="image<%= i+1 %>Url" value="<%= imgs[i]?.url || '' %>" placeholder="/media/... or https://..." required />
-                <label style="margin-top:8px;">Image <%= i+1 %> alt (optional)</label>
+                <label style="margin-top:8px;">Alt ảnh <%= i+1 %> (không bắt buộc)</label>
                 <input name="image<%= i+1 %>Alt" value="<%= imgs[i]?.alt || '' %>" placeholder="Deluxe room concept" />
 
                 <div class="drop js-drop" data-index="<%= i %>">
                   <div class="dropTop">
                     <div class="dropHint">
-                      Drag & drop an image here, or pick a file. We will auto-scale to a standard size.
+                      Kéo & thả ảnh vào đây, hoặc chọn file. Hệ thống sẽ tự scale về kích thước chuẩn.
                     </div>
                     <div style="display:flex; gap:8px; align-items:center;">
                       <input class="js-file" data-index="<%= i %>" type="file" accept="image/*" style="max-width: 210px;" />
-                      <button class="btn" type="button" onclick="window.__roomUploadClear(<%= i %>)">Clear</button>
+                      <button class="btn" type="button" onclick="window.__roomUploadClear(<%= i %>)">Xoá ảnh</button>
                     </div>
                   </div>
                   <div class="thumb">
@@ -191,7 +187,7 @@
                       <img class="js-thumb" data-index="<%= i %>" src="<%= imgs[i].url %>" alt="" />
                     <% } else { %>
                       <img class="js-thumb" data-index="<%= i %>" src="" alt="" style="display:none;" />
-                      <span class="muted">No image</span>
+                      <span class="muted">Chưa có ảnh</span>
                     <% } %>
                   </div>
                 </div>
@@ -200,8 +196,8 @@
           </div>
 
           <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
-            <button class="btn btnPrimary" type="submit"><%= mode === 'create' ? 'Create room' : 'Save changes' %></button>
-            <a class="btn" href="/admin/rooms">Cancel</a>
+            <button class="btn btnPrimary" type="submit"><%= mode === 'create' ? 'Tạo hạng phòng' : 'Lưu thay đổi' %></button>
+            <a class="btn" href="/admin/rooms">Huỷ</a>
           </div>
         </form>
       </div>
@@ -264,7 +260,7 @@
           setUrl(i, url);
           setThumb(i, url);
         } catch (e) {
-          alert("Image upload failed. Please try again.");
+          alert("Upload ảnh thất bại. Vui lòng thử lại.");
         } finally {
           if (drop) drop.classList.remove("drag");
         }
