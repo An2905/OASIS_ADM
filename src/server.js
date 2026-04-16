@@ -208,6 +208,27 @@ app.get("/api/public/settings", async (_req, res) => {
 app.get("/api/rooms", async (_req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const rooms = await listRooms();
+
+  // Simple repair for old/broken image paths that don't exist in this export.
+  const fallbackImagesBySlug = {
+    deluxe: [
+      "/wp-content/uploads/2023/05/DSC02700.jpg",
+      "/wp-content/uploads/2023/05/DSC02694.jpg",
+      "/wp-content/uploads/2023/05/DSC02706.jpg",
+      "/wp-content/uploads/2023/05/JBN03548.jpg",
+      "/wp-content/uploads/2023/05/DSC02659-Large.jpg",
+      "/wp-content/uploads/2023/05/DSC02647.jpg"
+    ]
+  };
+
+  const normalizeRoomImages = (slug, urls) => {
+    const list = Array.isArray(urls) ? urls.filter(Boolean) : [];
+    if (!list.length) return list;
+    const allBrokenLocal = list.every((u) => String(u).startsWith("/assets/room-concepts/"));
+    if (allBrokenLocal && fallbackImagesBySlug[slug]) return fallbackImagesBySlug[slug];
+    return list;
+  };
+
   res.json({
     rooms: rooms.map((r) => ({
       slug: r.slug,
@@ -219,7 +240,7 @@ app.get("/api/rooms", async (_req, res) => {
       description: r.description,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
-      images: r.images.map((img) => img.url),
+      images: normalizeRoomImages(r.slug, r.images.map((img) => img.url)),
       status: "ACTIVE"
     }))
   });
