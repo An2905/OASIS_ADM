@@ -168,6 +168,36 @@ async function main() {
       }
     });
   }
+
+  // Repair: some deployments may have "deluxe" images pointing to non-existent local assets.
+  // If so, reset them back to known-good wp-content images.
+  const deluxe = await prisma.roomCategory.findUnique({
+    where: { slug: "deluxe" },
+    include: { images: { orderBy: { sortOrder: "asc" } } }
+  });
+  if (deluxe) {
+    const hasBrokenLocal = (deluxe.images || []).some((img) =>
+      String(img.url || "").startsWith("/assets/room-concepts/")
+    );
+    if (hasBrokenLocal) {
+      const fallback = defaultRooms.find((r) => r.slug === "deluxe");
+      if (fallback) {
+        await prisma.roomCategory.update({
+          where: { id: deluxe.id },
+          data: {
+            images: {
+              deleteMany: {},
+              create: fallback.images.slice(0, 6).map((url, i) => ({
+                sortOrder: i,
+                url,
+                alt: `${fallback.name} concept image`
+              }))
+            }
+          }
+        });
+      }
+    }
+  }
 }
 
 main()
