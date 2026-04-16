@@ -14,6 +14,17 @@
       '<div class="posts-wrapper cs-rooms-wrapper">' +
       rooms
         .map(function (r) {
+          function pickFeatured(images) {
+            if (!Array.isArray(images)) return "";
+            for (var i = 0; i < images.length; i++) {
+              var u = String(images[i] || "").trim();
+              if (!u) continue;
+              if (u.indexOf("undefined") !== -1 || u.indexOf("null") !== -1) continue;
+              if (u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://")) return u;
+            }
+            return "";
+          }
+
           var bedLabel = String(r.bed || "").trim();
           if (/^1\b/.test(bedLabel) && /\bBeds\b/i.test(bedLabel)) {
             bedLabel = bedLabel.replace(/\bBeds\b/gi, "Bed");
@@ -25,7 +36,7 @@
 
           // IMPORTANT: match theme markup on /stay/ so images display reliably.
           // Use the first concept image as the featured image.
-          var featured = Array.isArray(r.images) && r.images[0] ? String(r.images[0]) : "";
+          var featured = pickFeatured(r.images);
           var gallery =
             '<div class="featured-img">' +
             '<a href="/room/' +
@@ -40,7 +51,9 @@
             "</div>";
 
           return (
-            '<div class="post cs-room-item has-post-thumbnail format-gallery">' +
+            '<div class="post cs-room-item ' +
+            (featured ? "has-post-thumbnail " : "") +
+            'format-gallery">' +
             gallery +
             '<div class="post-content cs-room-content">' +
             '<header class="post-header item-header">' +
