@@ -35,8 +35,7 @@ const app = express();
 // Bump these when client-side assets change materially (cache-busting for injected HTML).
 const ASSET_VERSIONS = {
   siteEn: "3",
-  roomDetail: "5",
-  homeAccommodations: "11"
+  roomDetail: "5"
 };
 
 function rewriteAssetScriptSrc(html, file, version) {
@@ -52,7 +51,6 @@ function applyPublicHtmlAssetVersions(html) {
   let out = String(html || "");
   out = rewriteAssetScriptSrc(out, "site-en.js", ASSET_VERSIONS.siteEn);
   out = rewriteAssetScriptSrc(out, "room-detail-from-db.js", ASSET_VERSIONS.roomDetail);
-  out = rewriteAssetScriptSrc(out, "home-accommodations-from-db.js", ASSET_VERSIONS.homeAccommodations);
   return out;
 }
 
@@ -166,17 +164,12 @@ async function tryServeHtmlWithInjection(req, res, next) {
       if (!html.includes("/assets/site-en.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          `  <script defer src="/assets/site-en.js?v=${ASSET_VERSIONS.siteEn}"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n  <script defer src="/assets/home-accommodations-from-db.js?v=${ASSET_VERSIONS.homeAccommodations}"></script>\n</body>`
+          `  <script defer src="/assets/site-en.js?v=${ASSET_VERSIONS.siteEn}"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n</body>`
         );
       } else if (!html.includes("/assets/room-detail-from-db.js")) {
         html = html.replace(
           /<\/body\s*>/i,
           `  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n</body>`
-        );
-      } else if (!html.includes("/assets/home-accommodations-from-db.js")) {
-        html = html.replace(
-          /<\/body\s*>/i,
-          `  <script defer src="/assets/home-accommodations-from-db.js?v=${ASSET_VERSIONS.homeAccommodations}"></script>\n</body>`
         );
       }
 
