@@ -32,6 +32,30 @@ const rootDir = path.resolve(__dirname, "..");
 
 const app = express();
 
+// Bump these when client-side assets change materially (cache-busting for injected HTML).
+const ASSET_VERSIONS = {
+  siteEn: "3",
+  roomDetail: "5",
+  homeAccommodations: "10"
+};
+
+function rewriteAssetScriptSrc(html, file, version) {
+  const safeFile = String(file).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`<script([^>]*?)src="/assets/${safeFile}(?:\\?v=[^"']*)?"([^>]*)>`, "gi");
+  return html.replace(re, (_m, before, after) => {
+    const v = String(version);
+    return `<script${before}src="/assets/${file}?v=${v}"${after}>`;
+  });
+}
+
+function applyPublicHtmlAssetVersions(html) {
+  let out = String(html || "");
+  out = rewriteAssetScriptSrc(out, "site-en.js", ASSET_VERSIONS.siteEn);
+  out = rewriteAssetScriptSrc(out, "room-detail-from-db.js", ASSET_VERSIONS.roomDetail);
+  out = rewriteAssetScriptSrc(out, "home-accommodations-from-db.js", ASSET_VERSIONS.homeAccommodations);
+  return out;
+}
+
 // Railway/Reverse-proxy friendly (needed for secure cookies)
 app.set("trust proxy", 1);
 
@@ -137,24 +161,27 @@ async function tryServeHtmlWithInjection(req, res, next) {
       if (path.extname(filePath).toLowerCase() !== ".html") continue;
 
       let html = await fs.readFile(filePath, "utf8");
+      html = applyPublicHtmlAssetVersions(html);
+
       if (!html.includes("/assets/site-en.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/site-en.js?v=3"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=4"></script>\n  <script defer src="/assets/home-accommodations-from-db.js?v=9"></script>\n</body>'
+          `  <script defer src="/assets/site-en.js?v=${ASSET_VERSIONS.siteEn}"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n  <script defer src="/assets/home-accommodations-from-db.js?v=${ASSET_VERSIONS.homeAccommodations}"></script>\n</body>`
         );
       } else if (!html.includes("/assets/room-detail-from-db.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/room-detail-from-db.js?v=4"></script>\n</body>'
+          `  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n</body>`
         );
       } else if (!html.includes("/assets/home-accommodations-from-db.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          '  <script defer src="/assets/home-accommodations-from-db.js?v=9"></script>\n</body>'
+          `  <script defer src="/assets/home-accommodations-from-db.js?v=${ASSET_VERSIONS.homeAccommodations}"></script>\n</body>`
         );
       }
 
       res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.setHeader("Cache-Control", "no-store");
       return res.status(200).send(html);
     } catch {
       // Not found: keep trying
@@ -511,17 +538,18 @@ app.get("/room/:slug/", async (req, res, next) => {
     // Serve a theme-consistent room template, then let client script sync content from DB.
     const templatePath = path.join(rootDir, "room", "deluxe", "index.html");
     let html = await fs.readFile(templatePath, "utf8");
+    html = applyPublicHtmlAssetVersions(html);
 
     // Ensure our sync scripts are present (same injection logic as static pages).
     if (!html.includes("/assets/site-en.js")) {
       html = html.replace(
         /<\/body\s*>/i,
-        '  <script defer src="/assets/site-en.js?v=3"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=4"></script>\n</body>'
+        `  <script defer src="/assets/site-en.js?v=${ASSET_VERSIONS.siteEn}"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n</body>`
       );
     } else if (!html.includes("/assets/room-detail-from-db.js")) {
       html = html.replace(
         /<\/body\s*>/i,
-        '  <script defer src="/assets/room-detail-from-db.js?v=4"></script>\n</body>'
+        `  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n</body>`
       );
     }
 

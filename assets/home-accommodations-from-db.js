@@ -21,14 +21,35 @@
   const normalizeSize = (size) => String(size || "").trim();
 
   const findCarouselWrapper = () => {
-    // Find the section by heading text, then locate the nearest rooms carousel wrapper.
+    // Find the heading, then locate the rooms carousel.
+    // NOTE: In exported Elementor HTML, the title widget and `cs_rooms` widget are often in
+    // *different* sections (siblings). A `parentElement.querySelector(...)` from the title section
+    // can miss the carousel entirely, which looks like "missing rooms" after DB sync changes.
     const headings = Array.from(document.querySelectorAll("h3.cs-title"));
     const h = headings.find((x) => (x.textContent || "").trim() === "The Accommodations");
     if (!h) return null;
-    const section = h.closest("section") || h.closest(".elementor-section") || document;
-    const posts = section.parentElement
-      ? section.parentElement.querySelector(".posts.cs-rooms.cs-rooms-carousel")
-      : null;
+
+    const titleSection = h.closest("section") || h.closest(".elementor-section");
+    let posts = null;
+
+    // Prefer the carousel in the next section(s) after the title section (common Elementor layout).
+    if (titleSection) {
+      let el = titleSection.nextElementSibling;
+      for (let i = 0; i < 6 && el; i += 1) {
+        const hit = el.querySelector?.(".posts.cs-rooms.cs-rooms-carousel");
+        if (hit) {
+          posts = hit;
+          break;
+        }
+        el = el.nextElementSibling;
+      }
+    }
+
+    // Fallback: global match (there should only be one on the home page).
+    if (!posts) {
+      posts = document.querySelector(".posts.cs-rooms.cs-rooms-carousel");
+    }
+
     const wrapper = posts ? posts.querySelector(".posts-wrapper.cs-rooms-wrapper") : null;
     return { posts, wrapper };
   };
@@ -105,6 +126,23 @@
     // Hide unused slots (prevents stale cards showing when DB has fewer rooms than slots)
     for (let i = n; i < existing.length; i++) {
       existing[i].classList.add("hide");
+    }
+
+    // Theme carousels (Slick) often measure slides on init; nudge a refresh after we mutate slots.
+    try {
+      window.dispatchEvent(new Event("resize"));
+    } catch {
+      // ignore
+    }
+    try {
+      if (found.posts && window.jQuery) {
+        const $p = window.jQuery(found.posts);
+        if ($p && typeof $p.slick === "function" && $p.hasClass("slick-initialized")) {
+          $p.slick("setPosition");
+        }
+      }
+    } catch {
+      // ignore
     }
   };
 
