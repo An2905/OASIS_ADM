@@ -36,7 +36,7 @@ const app = express();
 const ASSET_VERSIONS = {
   siteEn: "3",
   roomDetail: "5",
-  homeAccommodations: "10"
+  homeAccommodations: "11"
 };
 
 function rewriteAssetScriptSrc(html, file, version) {

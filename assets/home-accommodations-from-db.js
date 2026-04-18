@@ -128,17 +128,26 @@
       existing[i].classList.add("hide");
     }
 
-    // Theme carousels (Slick) often measure slides on init; nudge a refresh after we mutate slots.
-    try {
-      window.dispatchEvent(new Event("resize"));
-    } catch {
-      // ignore
-    }
+    // Slick measures slides on init; refresh layout on the rooms carousel only.
+    // Do NOT dispatch a global `resize` — Cozystay popups (`.cs-popup`) listen to layout events
+    // and can auto-close ~1s after open, which matches the `/api/rooms` fetch timing.
     try {
       if (found.posts && window.jQuery) {
-        const $p = window.jQuery(found.posts);
-        if ($p && typeof $p.slick === "function" && $p.hasClass("slick-initialized")) {
-          $p.slick("setPosition");
+        const el = found.posts;
+        const run = () => {
+          try {
+            const $p = window.jQuery(el);
+            if ($p && typeof $p.slick === "function" && $p.hasClass("slick-initialized")) {
+              $p.slick("setPosition");
+            }
+          } catch {
+            // ignore
+          }
+        };
+        if (typeof window.requestAnimationFrame === "function") {
+          window.requestAnimationFrame(run);
+        } else {
+          run();
         }
       }
     } catch {
