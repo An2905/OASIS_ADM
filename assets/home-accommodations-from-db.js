@@ -20,6 +20,17 @@
 
   const normalizeSize = (size) => String(size || "").trim();
 
+  const pickFeaturedUrl = (images) => {
+    if (!Array.isArray(images)) return "";
+    for (let i = 0; i < images.length; i++) {
+      const u = String(images[i] || "").trim();
+      if (!u) continue;
+      if (u.includes("undefined") || u.includes("null")) continue;
+      if (u.startsWith("/") || u.startsWith("http://") || u.startsWith("https://")) return u;
+    }
+    return "";
+  };
+
   const findCarouselWrapper = () => {
     // Find the section by heading text, then locate the nearest rooms carousel wrapper.
     const headings = Array.from(document.querySelectorAll("h3.cs-title"));
@@ -56,7 +67,7 @@
 
   const applyRoomToNode = (postEl, r) => {
     const href = `/room/${String(r.slug || "").toLowerCase()}/`;
-    const imgUrl = Array.isArray(r.images) && r.images[0] ? r.images[0] : "";
+    const imgUrl = pickFeaturedUrl(r.images);
     const size = normalizeSize(r.size);
     const bed = normalizeBed(r.bed);
     const guests = r.guests || 2;
@@ -90,14 +101,23 @@
     if (!found || !found.wrapper) return;
 
     // IMPORTANT: don't replace wrapper HTML; it breaks theme/carousel layout.
-    // Also don't clone/hide nodes; carousel JS depends on a stable DOM.
-    const existing = Array.from(found.wrapper.querySelectorAll(".post.cs-room-item"));
-    if (!existing.length) return;
+    // Also don't clone nodes. Theme often has N visible cards + extra `.hide` slides:
+    // assign newest rooms to *visible* slots first so new rooms appear in the grid.
+    const all = Array.from(found.wrapper.querySelectorAll(".post.cs-room-item"));
+    if (!all.length) return;
 
-    // Apply up to existing count (leave extras untouched)
-    const n = Math.min(existing.length, rooms.length);
+    const visible = all.filter((el) => !el.classList.contains("hide"));
+    const hidden = all.filter((el) => el.classList.contains("hide"));
+    const slots = visible.length ? [...visible, ...hidden] : [...all];
+    const visibleCount = visible.length || 0;
+
+    const n = Math.min(slots.length, rooms.length);
     for (let i = 0; i < n; i++) {
-      applyRoomToNode(existing[i], rooms[i]);
+      applyRoomToNode(slots[i], rooms[i]);
+      if (visibleCount) {
+        if (i < visibleCount) slots[i].classList.remove("hide");
+        else slots[i].classList.add("hide");
+      }
     }
   };
 
