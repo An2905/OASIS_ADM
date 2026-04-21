@@ -33,17 +33,25 @@ function applySettingsToDom(settings) {
     el.setAttribute("href", String(settings[key]));
   });
 
-  // Counters: data-cms-counter-to="key" sets Elementors data-to-value
-  document.querySelectorAll("[data-cms-counter-to]").forEach((el) => {
-    const key = el.getAttribute("data-cms-counter-to");
-    if (!key) return;
-    if (settings[key] == null) return;
-    const v = Number(settings[key]);
-    if (!Number.isFinite(v)) return;
-    el.setAttribute("data-to-value", String(v));
-    // Ensure visible value is correct even if animation already ran.
-    el.textContent = String(v);
-  });
+  // Counters: Elementor scripts may mutate numbers after DOMContentLoaded,
+  // so we re-apply values a few times to ensure the final value matches CMS.
+  const applyCounters = () => {
+    document.querySelectorAll("[data-cms-counter-to]").forEach((el) => {
+      const key = el.getAttribute("data-cms-counter-to");
+      if (!key) return;
+      if (settings[key] == null) return;
+      const v = Number(settings[key]);
+      if (!Number.isFinite(v)) return;
+      el.setAttribute("data-to-value", String(v));
+      el.textContent = String(v);
+    });
+  };
+  applyCounters();
+  // After page scripts initialize and after a couple of ticks.
+  window.addEventListener("load", applyCounters, { once: true });
+  [250, 1000, 2500].forEach((ms) => window.setTimeout(applyCounters, ms));
+  // If counters animate on scroll/appear, ensure we overwrite afterward.
+  window.addEventListener("scroll", applyCounters, { passive: true });
 
   // Specific mappings
   const isHome = window.location && window.location.pathname === "/";
