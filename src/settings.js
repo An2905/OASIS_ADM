@@ -29,6 +29,35 @@ export const PublicSettingsSchema = z.object({
   copyrightText: z.string().min(1).max(300)
 });
 
+const DEFAULT_PUBLIC_SETTINGS = {
+  siteName: "Tamcoc Oasis",
+  heroTitle: "TAMCOC OASIS",
+  heroNoteTitle: "ATTENTION!",
+  heroNoteBody: "We only accept room bookings through our official channels",
+  hotlineLabel: "Zalo/Hotline",
+  hotlineNumber: "036 308 7 803",
+  emailAddress: "info@tamcocoasis.com",
+  aboutHeroSubtitle: "Enjoy Your Stay At The Hotel",
+  aboutHeroTitle:
+    "Spend your comfortable holiday in the heart of the beautiful South Pacific",
+  aboutHeroCounter1Label: "Premium Rooms",
+  aboutHeroCounter1Value: 72,
+  aboutHeroCounter2Label: "Deluxe Suites",
+  aboutHeroCounter2Value: 20,
+  aboutHeroCounter3Label: "Private Chalets",
+  aboutHeroCounter3Value: 12,
+  aboutHeroCounter4Label: "Restaurants",
+  aboutHeroCounter4Value: 6,
+  social: {
+    facebook: "",
+    twitter: "",
+    pinterest: "",
+    youtube: "",
+    instagram: ""
+  },
+  copyrightText: "© Copyright TamCoc Oasis"
+};
+
 const DEFAULT_KEYS = Object.keys(PublicSettingsSchema.shape);
 
 export async function getPublicSettings() {
@@ -37,8 +66,8 @@ export async function getPublicSettings() {
     where: { key: { in: DEFAULT_KEYS } }
   });
   const obj = Object.fromEntries(rows.map((r) => [r.key, r.value]));
-  // Let schema fill in validation errors early.
-  return PublicSettingsSchema.parse(obj);
+  // Backward-compatible: tolerate missing keys when schema evolves.
+  return PublicSettingsSchema.parse({ ...DEFAULT_PUBLIC_SETTINGS, ...obj });
 }
 
 export async function upsertPublicSettings(input) {
