@@ -33,13 +33,28 @@ function applySettingsToDom(settings) {
     el.setAttribute("href", String(settings[key]));
   });
 
+  // Counters: data-cms-counter-to="key" sets Elementors data-to-value
+  document.querySelectorAll("[data-cms-counter-to]").forEach((el) => {
+    const key = el.getAttribute("data-cms-counter-to");
+    if (!key) return;
+    if (settings[key] == null) return;
+    const v = Number(settings[key]);
+    if (!Number.isFinite(v)) return;
+    el.setAttribute("data-to-value", String(v));
+    // Ensure visible value is correct even if animation already ran.
+    el.textContent = String(v);
+  });
+
   // Specific mappings
-  document.title = `Home - ${settings.siteName}`;
+  const isHome = window.location && window.location.pathname === "/";
+  if (isHome) {
+    document.title = `Home - ${settings.siteName}`;
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute("content", `Home - ${settings.siteName}`);
+  }
+
   const ogSite = document.querySelector('meta[property="og:site_name"]');
   if (ogSite) ogSite.setAttribute("content", settings.siteName);
-
-  const ogTitle = document.querySelector('meta[property="og:title"]');
-  if (ogTitle) ogTitle.setAttribute("content", `Home - ${settings.siteName}`);
 
   // Social menu links (by data-cms-social)
   document.querySelectorAll("[data-cms-social]").forEach((a) => {

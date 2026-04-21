@@ -35,7 +35,8 @@ const app = express();
 // Bump these when client-side assets change materially (cache-busting for injected HTML).
 const ASSET_VERSIONS = {
   siteEn: "3",
-  roomDetail: "5"
+  roomDetail: "5",
+  cmsConfig: "2"
 };
 
 function rewriteAssetScriptSrc(html, file, version) {
@@ -51,6 +52,7 @@ function applyPublicHtmlAssetVersions(html) {
   let out = String(html || "");
   out = rewriteAssetScriptSrc(out, "site-en.js", ASSET_VERSIONS.siteEn);
   out = rewriteAssetScriptSrc(out, "room-detail-from-db.js", ASSET_VERSIONS.roomDetail);
+  out = rewriteAssetScriptSrc(out, "cms-config.js", ASSET_VERSIONS.cmsConfig);
   return out;
 }
 
@@ -164,9 +166,16 @@ async function tryServeHtmlWithInjection(req, res, next) {
       if (!html.includes("/assets/site-en.js")) {
         html = html.replace(
           /<\/body\s*>/i,
-          `  <script defer src="/assets/site-en.js?v=${ASSET_VERSIONS.siteEn}"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n</body>`
+          `  <script defer src="/assets/site-en.js?v=${ASSET_VERSIONS.siteEn}"></script>\n  <script defer src="/assets/cms-config.js?v=${ASSET_VERSIONS.cmsConfig}"></script>\n  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n</body>`
         );
-      } else if (!html.includes("/assets/room-detail-from-db.js")) {
+      } else if (!html.includes("/assets/cms-config.js")) {
+        html = html.replace(
+          /<\/body\s*>/i,
+          `  <script defer src="/assets/cms-config.js?v=${ASSET_VERSIONS.cmsConfig}"></script>\n</body>`
+        );
+      }
+
+      if (!html.includes("/assets/room-detail-from-db.js")) {
         html = html.replace(
           /<\/body\s*>/i,
           `  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n</body>`
@@ -353,6 +362,16 @@ app.post("/admin/settings", requireAdmin, async (req, res) => {
     hotlineLabel: req.body.hotlineLabel,
     hotlineNumber: req.body.hotlineNumber,
     emailAddress: req.body.emailAddress,
+    aboutHeroSubtitle: req.body.aboutHeroSubtitle,
+    aboutHeroTitle: req.body.aboutHeroTitle,
+    aboutHeroCounter1Label: req.body.aboutHeroCounter1Label,
+    aboutHeroCounter1Value: req.body.aboutHeroCounter1Value,
+    aboutHeroCounter2Label: req.body.aboutHeroCounter2Label,
+    aboutHeroCounter2Value: req.body.aboutHeroCounter2Value,
+    aboutHeroCounter3Label: req.body.aboutHeroCounter3Label,
+    aboutHeroCounter3Value: req.body.aboutHeroCounter3Value,
+    aboutHeroCounter4Label: req.body.aboutHeroCounter4Label,
+    aboutHeroCounter4Value: req.body.aboutHeroCounter4Value,
     social: {
       facebook: req.body.facebook,
       twitter: req.body.twitter,
