@@ -4,6 +4,8 @@
     "Thanks! Please check your inbox (and spam). We’ll reply within 12 business hours.";
   const MSG_NO_SMTP =
     "Thanks! We’ll reply within 12 business hours. Email confirmation is not enabled right now.";
+  const MSG_RATE =
+    "Too many requests. Please try again later.";
   const MSG_PARTIAL =
     "Thank you for your message. We will reply within 12 business hours. If email confirmation is unavailable right now, please contact us directly.";
   const MSG_ERR =
@@ -14,6 +16,11 @@
     if (data.mailConfigured === false) return MSG_NO_SMTP;
     if (data.mailConfigured === true) return MSG_OK_MAIL;
     return MSG_PARTIAL;
+  }
+
+  function messageForHttpResponse(res, data, ok) {
+    if (res && res.status === 429) return MSG_RATE;
+    return messageForLeadResponse(data, ok);
   }
 
   async function postThankYou(payload) {
@@ -63,7 +70,7 @@
         try {
           const { res, data } = await postThankYou({ email });
           const ok = res.ok && (data.sent || data.queued);
-          if (box) box.textContent = messageForLeadResponse(data, ok);
+          if (box) box.textContent = messageForHttpResponse(res, data, ok);
           if (ok) form.reset();
         } catch {
           if (box) box.textContent = MSG_ERR;
@@ -101,7 +108,7 @@
             out.classList.remove("wpcf7-validation-errors", "wpcf7-spam-blocked");
             out.classList.add("wpcf7-mail-sent-ok");
             const ok = res.ok && (data.sent || data.queued);
-            out.textContent = messageForLeadResponse(data, ok);
+            out.textContent = messageForHttpResponse(res, data, ok);
           }
           const ok = res.ok && (data.sent || data.queued);
           if (ok) form.reset();

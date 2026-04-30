@@ -43,7 +43,7 @@ const ASSET_VERSIONS = {
   siteEn: "3",
   roomDetail: "5",
   cmsConfig: "4",
-  leadThanks: "5"
+  leadThanks: "6"
 };
 
 function rewriteAssetScriptSrc(html, file, version) {
@@ -269,6 +269,38 @@ app.use("/assets", express.static(path.join(rootDir, "assets")));
 app.use("/wp-content", express.static(path.join(rootDir, "wp-content")));
 app.use("/wp-includes", express.static(path.join(rootDir, "wp-includes")));
 
+// --- Basic rate limiting for public mail endpoint (per-IP, in-memory) ---
+const leadThankYouLimiter = (() => {
+  const WINDOW_MS = 30 * 60 * 1000; // 30 minutes
+  const MAX = 3;
+  const hits = new Map(); // ip -> number[] timestamps
+
+  function prune(now, arr) {
+    let i = 0;
+    while (i < arr.length && now - arr[i] > WINDOW_MS) i++;
+    return i ? arr.slice(i) : arr;
+  }
+
+  return (req, res, next) => {
+    // trust proxy is enabled; req.ip is client ip
+    const ip = String(req.ip || "unknown");
+    const now = Date.now();
+    const arr = prune(now, hits.get(ip) || []);
+    if (arr.length >= MAX) {
+      res.setHeader("Retry-After", String(Math.ceil(WINDOW_MS / 1000)));
+      return res.status(429).json({
+        ok: false,
+        queued: false,
+        rateLimited: true,
+        error: "Too many requests"
+      });
+    }
+    arr.push(now);
+    hits.set(ip, arr);
+    return next();
+  };
+})();
+
 // Page folders that exist in this export
 const pageDirs = [
   "about-the-resort",
@@ -318,7 +350,7 @@ function getPublicSettingsWithTimeout(ms = 2800) {
   ]);
 }
 
-app.post("/api/public/lead-thank-you", async (req, res) => {
+app.post("/api/public/lead-thank-you", leadThankYouLimiter, async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const parsed = LeadThankYouBodySchema.safeParse(req.body || {});
   if (!parsed.success) {
