@@ -10,14 +10,28 @@ function escapeHtml(s) {
     .replace(/"/g, "&quot;");
 }
 
+function useBrevoSmtp() {
+  return Boolean(process.env.BREVO_USER && process.env.BREVO_PASS);
+}
+
 function getTransport() {
-  const host = process.env.SMTP_HOST || "";
+  const brevo = useBrevoSmtp();
+  const host = brevo ? "smtp-relay.brevo.com" : process.env.SMTP_HOST || "";
   if (!host) return null;
   if (cachedTransport) return cachedTransport;
-  const port = Number(process.env.SMTP_PORT || 587);
-  const secure =
-    String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || port === 465;
+
+  const port = brevo ? 587 : Number(process.env.SMTP_PORT || 587);
+  const secure = brevo
+    ? false
+    : String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || port === 465;
   const timeoutMs = Number(process.env.SMTP_TIMEOUT_MS || 8000);
+
+  const auth = brevo
+    ? { user: process.env.BREVO_USER, pass: process.env.BREVO_PASS }
+    : process.env.SMTP_USER && process.env.SMTP_PASS
+      ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
+      : undefined;
+
   cachedTransport = nodemailer.createTransport({
     host,
     port,
@@ -25,32 +39,41 @@ function getTransport() {
     connectionTimeout: timeoutMs,
     greetingTimeout: timeoutMs,
     socketTimeout: timeoutMs,
-    auth:
-      process.env.SMTP_USER && process.env.SMTP_PASS
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-        : undefined
+    auth
   });
   return cachedTransport;
 }
 
+/** Verified sender address (must match Brevo / SMTP verified sender). */
+function resolveMailFrom() {
+  return (
+    process.env.MAIL_FROM ||
+    process.env.BREVO_FROM ||
+    process.env.BREVO_USER ||
+    process.env.SMTP_USER ||
+    ""
+  );
+}
+
 export function isSmtpConfigured() {
-  return Boolean(process.env.SMTP_HOST && getTransport());
+  return Boolean(getTransport());
 }
 
 /**
  * Sends an automatic thank-you to the visitor.
- * Requires SMTP_HOST and MAIL_FROM (or SMTP_USER as fallback From).
+ * Brevo: set BREVO_USER, BREVO_PASS, and MAIL_FROM (verified sender).
+ * Generic SMTP: set SMTP_HOST, optional SMTP_USER/SMTP_PASS, MAIL_FROM.
  */
 export async function sendVisitorThankYouEmail({ to, siteName }) {
   const transport = getTransport();
-  const from = process.env.MAIL_FROM || process.env.SMTP_USER;
+  const from = resolveMailFrom();
   if (!transport) {
     const err = new Error("SMTP not configured");
     err.code = "SMTP_NOT_CONFIGURED";
     throw err;
   }
   if (!from) {
-    const err = new Error("MAIL_FROM or SMTP_USER required");
+    const err = new Error("MAIL_FROM, BREVO_FROM, or BREVO_USER required");
     err.code = "MAIL_FROM_MISSING";
     throw err;
   }
@@ -84,7 +107,7 @@ export async function sendVisitorThankYouEmail({ to, siteName }) {
 
 export async function sendStaffLeadNotification({ notifyTo, siteName, lead }) {
   const transport = getTransport();
-  const from = process.env.MAIL_FROM || process.env.SMTP_USER;
+  const from = resolveMailFrom();
   if (!transport || !from || !notifyTo) return;
 
   const subject = `[Website contact] ${siteName}`;
