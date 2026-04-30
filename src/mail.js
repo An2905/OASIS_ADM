@@ -14,17 +14,23 @@ function useBrevoSmtp() {
   return Boolean(process.env.BREVO_USER && process.env.BREVO_PASS);
 }
 
+function useBrevoApi() {
+  return Boolean(process.env.BREVO_API_KEY);
+}
+
 function getTransport() {
   const brevo = useBrevoSmtp();
   const host = brevo ? "smtp-relay.brevo.com" : process.env.SMTP_HOST || "";
   if (!host) return null;
   if (cachedTransport) return cachedTransport;
 
-  const port = brevo ? 587 : Number(process.env.SMTP_PORT || 587);
+  const port = brevo
+    ? Number(process.env.BREVO_PORT || 587)
+    : Number(process.env.SMTP_PORT || 587);
   const secure = brevo
-    ? false
+    ? String(process.env.BREVO_SECURE || "").toLowerCase() === "true"
     : String(process.env.SMTP_SECURE || "").toLowerCase() === "true" || port === 465;
-  const timeoutMs = Number(process.env.SMTP_TIMEOUT_MS || 8000);
+  const timeoutMs = Number(process.env.SMTP_TIMEOUT_MS || 20000);
 
   const auth = brevo
     ? { user: process.env.BREVO_USER, pass: process.env.BREVO_PASS }
@@ -61,7 +67,50 @@ export function isSmtpConfigured() {
 
 /** True only if thank-you mail can be attempted (host + From address). */
 export function canSendVisitorMail() {
-  return Boolean(getTransport() && resolveMailFrom());
+  return Boolean((useBrevoApi() || getTransport()) && resolveMailFrom());
+}
+
+async function sendViaBrevoApi({ fromEmail, fromName, toEmail, subject, text, html, replyTo }) {
+  const apiKey = process.env.BREVO_API_KEY || "";
+  if (!apiKey) {
+    const err = new Error("BREVO_API_KEY missing");
+    err.code = "BREVO_API_KEY_MISSING";
+    throw err;
+  }
+
+  const controller = new AbortController();
+  const timeoutMs = Number(process.env.BREVO_API_TIMEOUT_MS || 15000);
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        accept: "application/json",
+        "content-type": "application/json",
+        "api-key": apiKey
+      },
+      body: JSON.stringify({
+        sender: { email: fromEmail, name: fromName || undefined },
+        to: [{ email: toEmail }],
+        subject,
+        textContent: text,
+        htmlContent: html,
+        replyTo: replyTo ? { email: replyTo } : undefined
+      }),
+      signal: controller.signal
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(data?.message || `Brevo API error (${res.status})`);
+      err.code = "BREVO_API_ERROR";
+      err.status = res.status;
+      err.details = data;
+      throw err;
+    }
+    return data; // usually { messageId: "..." }
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 /**
@@ -70,13 +119,7 @@ export function canSendVisitorMail() {
  * Generic SMTP: set SMTP_HOST, optional SMTP_USER/SMTP_PASS, MAIL_FROM.
  */
 export async function sendVisitorThankYouEmail({ to, siteName }) {
-  const transport = getTransport();
   const from = resolveMailFrom();
-  if (!transport) {
-    const err = new Error("SMTP not configured");
-    err.code = "SMTP_NOT_CONFIGURED";
-    throw err;
-  }
   if (!from) {
     const err = new Error("MAIL_FROM, BREVO_FROM, or BREVO_USER required");
     err.code = "MAIL_FROM_MISSING";
@@ -100,17 +143,37 @@ export async function sendVisitorThankYouEmail({ to, siteName }) {
 <p>We have received your message and will reply within <strong>12 business hours</strong>.</p>
 <p>Best regards,<br>${escapeHtml(siteName)}</p>`;
 
-  const info = await transport.sendMail({
-    from,
-    to,
-    replyTo: process.env.MAIL_REPLY_TO || undefined,
-    subject,
-    text,
-    html
-  });
+  const replyTo = process.env.MAIL_REPLY_TO || undefined;
+  if (useBrevoApi()) {
+    const data = await sendViaBrevoApi({
+      fromEmail: from,
+      fromName: siteName,
+      toEmail: to,
+      subject,
+      text,
+      html,
+      replyTo
+    });
+    // eslint-disable-next-line no-console
+    console.log("[lead-mail] visitor thank-you sent", {
+      via: "brevo-api",
+      toDomain: String(to).split("@")[1] || "?",
+      messageId: data?.messageId || null
+    });
+    return;
+  }
+
+  const transport = getTransport();
+  if (!transport) {
+    const err = new Error("SMTP not configured");
+    err.code = "SMTP_NOT_CONFIGURED";
+    throw err;
+  }
+
+  const info = await transport.sendMail({ from, to, replyTo, subject, text, html });
   // eslint-disable-next-line no-console
   console.log("[lead-mail] visitor thank-you sent", {
-    via: useBrevoSmtp() ? "brevo" : "smtp",
+    via: useBrevoSmtp() ? "brevo-smtp" : "smtp",
     toDomain: String(to).split("@")[1] || "?",
     messageId: info?.messageId || null,
     response: info?.response || null
@@ -118,9 +181,8 @@ export async function sendVisitorThankYouEmail({ to, siteName }) {
 }
 
 export async function sendStaffLeadNotification({ notifyTo, siteName, lead }) {
-  const transport = getTransport();
   const from = resolveMailFrom();
-  if (!transport || !from || !notifyTo) return;
+  if (!from || !notifyTo) return;
 
   const subject = `[Website contact] ${siteName}`;
   const lines = [
@@ -131,16 +193,37 @@ export async function sendStaffLeadNotification({ notifyTo, siteName, lead }) {
     lead.message ? `Message:\n${lead.message}` : null
   ].filter(Boolean);
 
+  const replyTo = lead.email || undefined;
+  if (useBrevoApi()) {
+    const data = await sendViaBrevoApi({
+      fromEmail: from,
+      fromName: siteName,
+      toEmail: notifyTo,
+      subject,
+      text: lines.join("\n\n"),
+      html: `<pre style="white-space:pre-wrap">${escapeHtml(lines.join("\n\n"))}</pre>`,
+      replyTo
+    });
+    // eslint-disable-next-line no-console
+    console.log("[lead-mail] staff notification sent", {
+      via: "brevo-api",
+      messageId: data?.messageId || null
+    });
+    return;
+  }
+
+  const transport = getTransport();
+  if (!transport) return;
   const info = await transport.sendMail({
     from,
     to: notifyTo,
-    replyTo: lead.email || undefined,
+    replyTo,
     subject,
     text: lines.join("\n\n")
   });
   // eslint-disable-next-line no-console
   console.log("[lead-mail] staff notification sent", {
-    via: useBrevoSmtp() ? "brevo" : "smtp",
+    via: useBrevoSmtp() ? "brevo-smtp" : "smtp",
     messageId: info?.messageId || null,
     response: info?.response || null
   });
