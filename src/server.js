@@ -13,7 +13,11 @@ import Busboy from "busboy";
 import { z } from "zod";
 
 import { requireAdmin, verifyLogin } from "./auth.js";
-import { sendVisitorThankYouEmail, sendStaffLeadNotification } from "./mail.js";
+import {
+  sendVisitorThankYouEmail,
+  sendStaffLeadNotification,
+  canSendVisitorMail
+} from "./mail.js";
 import { getPublicSettings, upsertPublicSettings, PublicSettingsSchema } from "./settings.js";
 import {
   createRoom,
@@ -39,7 +43,7 @@ const ASSET_VERSIONS = {
   siteEn: "3",
   roomDetail: "5",
   cmsConfig: "4",
-  leadThanks: "4"
+  leadThanks: "5"
 };
 
 function rewriteAssetScriptSrc(html, file, version) {
@@ -305,6 +309,15 @@ const LeadThankYouBodySchema = z.object({
   message: z.string().max(5000).optional()
 });
 
+function getPublicSettingsWithTimeout(ms = 2800) {
+  return Promise.race([
+    getPublicSettings(),
+    new Promise((_resolve, reject) =>
+      setTimeout(() => reject(new Error("getPublicSettings timeout")), ms)
+    )
+  ]);
+}
+
 app.post("/api/public/lead-thank-you", async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   const parsed = LeadThankYouBodySchema.safeParse(req.body || {});
@@ -315,16 +328,18 @@ app.post("/api/public/lead-thank-you", async (req, res) => {
   let siteName = process.env.SITE_NAME || "Tamcoc Oasis";
   let notifyEmail = process.env.MAIL_NOTIFY_TO || null;
   try {
-    const settings = await getPublicSettings();
+    const settings = await getPublicSettingsWithTimeout();
     siteName = settings.siteName;
     notifyEmail = notifyEmail || settings.emailAddress;
   } catch {
-    // keep fallback siteName
+    // DB slow/unavailable — still acknowledge so the browser gets a response.
   }
+
+  const mailConfigured = canSendVisitorMail();
 
   // Important for Railway: respond quickly, then send mail in background.
   // SMTP connections can be slow/blocked and may cause the platform to return 502.
-  res.status(202).json({ ok: true, queued: true });
+  res.status(202).json({ ok: true, queued: true, mailConfigured });
 
   const lead = parsed.data;
   setImmediate(async () => {
@@ -341,12 +356,12 @@ app.post("/api/public/lead-thank-you", async (req, res) => {
           });
         } catch (e2) {
           // eslint-disable-next-line no-console
-          console.error(e2);
+          console.error("[lead-mail] staff notify failed", e2.code || "", e2.message);
         }
       }
     } catch (e) {
       // eslint-disable-next-line no-console
-      console.error(e);
+      console.error("[lead-mail] visitor mail failed", e.code || "", e.message);
     }
   });
 });

@@ -59,6 +59,11 @@ export function isSmtpConfigured() {
   return Boolean(getTransport());
 }
 
+/** True only if thank-you mail can be attempted (host + From address). */
+export function canSendVisitorMail() {
+  return Boolean(getTransport() && resolveMailFrom());
+}
+
 /**
  * Sends an automatic thank-you to the visitor.
  * Brevo: set BREVO_USER, BREVO_PASS, and MAIL_FROM (verified sender).
@@ -103,6 +108,8 @@ export async function sendVisitorThankYouEmail({ to, siteName }) {
     text,
     html
   });
+  // eslint-disable-next-line no-console
+  console.log("[lead-mail] visitor thank-you sent", { toDomain: String(to).split("@")[1] || "?" });
 }
 
 export async function sendStaffLeadNotification({ notifyTo, siteName, lead }) {
@@ -126,4 +133,6 @@ export async function sendStaffLeadNotification({ notifyTo, siteName, lead }) {
     subject,
     text: lines.join("\n\n")
   });
+  // eslint-disable-next-line no-console
+  console.log("[lead-mail] staff notification sent");
 }

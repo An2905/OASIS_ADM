@@ -1,11 +1,20 @@
 // Sends automatic thank-you email via Oasis CMS after newsletter or contact submit.
 (() => {
-  const MSG_OK =
-    "Thank you. We have sent a confirmation email — please check your inbox (and spam folder). We will reply within 12 business hours.";
+  const MSG_OK_MAIL =
+    "Thank you. A confirmation email has been queued — please check your inbox (and spam folder). We will reply within 12 business hours.";
+  const MSG_NO_SMTP =
+    "Thank you for your message. We will reply within 12 business hours. Automatic confirmation email is not enabled on the server yet — please contact us directly if you need an immediate reply.";
   const MSG_PARTIAL =
     "Thank you for your message. We will reply within 12 business hours. If email confirmation is unavailable right now, please contact us directly.";
   const MSG_ERR =
     "Sorry, something went wrong while sending email. Please try again later or contact us directly.";
+
+  function messageForLeadResponse(data, resOk) {
+    if (!resOk) return MSG_PARTIAL;
+    if (data.mailConfigured === false) return MSG_NO_SMTP;
+    if (data.mailConfigured === true) return MSG_OK_MAIL;
+    return MSG_PARTIAL;
+  }
 
   async function postThankYou(payload) {
     const ac = new AbortController();
@@ -54,7 +63,7 @@
         try {
           const { res, data } = await postThankYou({ email });
           const ok = res.ok && (data.sent || data.queued);
-          if (box) box.textContent = ok ? MSG_OK : MSG_PARTIAL;
+          if (box) box.textContent = messageForLeadResponse(data, ok);
           if (ok) form.reset();
         } catch {
           if (box) box.textContent = MSG_ERR;
@@ -92,7 +101,7 @@
             out.classList.remove("wpcf7-validation-errors", "wpcf7-spam-blocked");
             out.classList.add("wpcf7-mail-sent-ok");
             const ok = res.ok && (data.sent || data.queued);
-            out.textContent = ok ? MSG_OK : MSG_PARTIAL;
+            out.textContent = messageForLeadResponse(data, ok);
           }
           const ok = res.ok && (data.sent || data.queued);
           if (ok) form.reset();
