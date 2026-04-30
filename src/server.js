@@ -10,8 +10,10 @@ import morgan from "morgan";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import Busboy from "busboy";
+import { z } from "zod";
 
 import { requireAdmin, verifyLogin } from "./auth.js";
+import { sendVisitorThankYouEmail, sendStaffLeadNotification } from "./mail.js";
 import { getPublicSettings, upsertPublicSettings, PublicSettingsSchema } from "./settings.js";
 import {
   createRoom,
@@ -36,7 +38,8 @@ const app = express();
 const ASSET_VERSIONS = {
   siteEn: "3",
   roomDetail: "5",
-  cmsConfig: "4"
+  cmsConfig: "4",
+  leadThanks: "1"
 };
 
 function rewriteAssetScriptSrc(html, file, version) {
@@ -53,6 +56,7 @@ function applyPublicHtmlAssetVersions(html) {
   out = rewriteAssetScriptSrc(out, "site-en.js", ASSET_VERSIONS.siteEn);
   out = rewriteAssetScriptSrc(out, "room-detail-from-db.js", ASSET_VERSIONS.roomDetail);
   out = rewriteAssetScriptSrc(out, "cms-config.js", ASSET_VERSIONS.cmsConfig);
+  out = rewriteAssetScriptSrc(out, "lead-thanks.js", ASSET_VERSIONS.leadThanks);
   return out;
 }
 
@@ -182,6 +186,13 @@ async function tryServeHtmlWithInjection(req, res, next) {
         );
       }
 
+      if (!html.includes("/assets/lead-thanks.js")) {
+        html = html.replace(
+          /<\/body\s*>/i,
+          `  <script defer src="/assets/lead-thanks.js?v=${ASSET_VERSIONS.leadThanks}"></script>\n</body>`
+        );
+      }
+
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.setHeader("Cache-Control", "no-store");
       return res.status(200).send(html);
@@ -230,6 +241,64 @@ app.get("/api/public/settings", async (_req, res) => {
     });
   } catch (e) {
     res.status(500).json({ error: "Failed to load settings" });
+  }
+});
+
+const LeadThankYouBodySchema = z.object({
+  email: z.string().email().max(200),
+  name: z.string().max(200).optional(),
+  subject: z.string().max(300).optional(),
+  message: z.string().max(5000).optional()
+});
+
+app.post("/api/public/lead-thank-you", async (req, res) => {
+  res.setHeader("Cache-Control", "no-store");
+  const parsed = LeadThankYouBodySchema.safeParse(req.body || {});
+  if (!parsed.success) {
+    return res.status(400).json({ ok: false, sent: false, error: "Invalid payload" });
+  }
+
+  let siteName = process.env.SITE_NAME || "Tamcoc Oasis";
+  let notifyEmail = process.env.MAIL_NOTIFY_TO || null;
+  try {
+    const settings = await getPublicSettings();
+    siteName = settings.siteName;
+    notifyEmail = notifyEmail || settings.emailAddress;
+  } catch {
+    // keep fallback siteName
+  }
+
+  try {
+    await sendVisitorThankYouEmail({ to: parsed.data.email, siteName });
+
+    const { name, subject, message } = parsed.data;
+    if (notifyEmail && (name || subject || message)) {
+      try {
+        await sendStaffLeadNotification({
+          notifyTo: notifyEmail,
+          siteName,
+          lead: parsed.data
+        });
+      } catch (e2) {
+        // eslint-disable-next-line no-console
+        console.error(e2);
+      }
+    }
+
+    return res.json({ ok: true, sent: true });
+  } catch (e) {
+    if (e?.code === "SMTP_NOT_CONFIGURED" || e?.code === "MAIL_FROM_MISSING") {
+      return res.status(503).json({
+        ok: false,
+        sent: false,
+        error: "Mail not configured",
+        hint:
+          "Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and MAIL_FROM (or SMTP_USER as From) on Railway."
+      });
+    }
+    // eslint-disable-next-line no-console
+    console.error(e);
+    return res.status(500).json({ ok: false, sent: false, error: "Send failed" });
   }
 });
 
@@ -562,6 +631,13 @@ app.get("/room/:slug/", async (req, res, next) => {
       html = html.replace(
         /<\/body\s*>/i,
         `  <script defer src="/assets/room-detail-from-db.js?v=${ASSET_VERSIONS.roomDetail}"></script>\n</body>`
+      );
+    }
+
+    if (!html.includes("/assets/lead-thanks.js")) {
+      html = html.replace(
+        /<\/body\s*>/i,
+        `  <script defer src="/assets/lead-thanks.js?v=${ASSET_VERSIONS.leadThanks}"></script>\n</body>`
       );
     }
 
