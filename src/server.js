@@ -39,7 +39,7 @@ const ASSET_VERSIONS = {
   siteEn: "3",
   roomDetail: "5",
   cmsConfig: "4",
-  leadThanks: "3"
+  leadThanks: "4"
 };
 
 function rewriteAssetScriptSrc(html, file, version) {
@@ -268,38 +268,33 @@ app.post("/api/public/lead-thank-you", async (req, res) => {
     // keep fallback siteName
   }
 
-  try {
-    await sendVisitorThankYouEmail({ to: parsed.data.email, siteName });
+  // Important for Railway: respond quickly, then send mail in background.
+  // SMTP connections can be slow/blocked and may cause the platform to return 502.
+  res.status(202).json({ ok: true, queued: true });
 
-    const { name, subject, message } = parsed.data;
-    if (notifyEmail && (name || subject || message)) {
-      try {
-        await sendStaffLeadNotification({
-          notifyTo: notifyEmail,
-          siteName,
-          lead: parsed.data
-        });
-      } catch (e2) {
-        // eslint-disable-next-line no-console
-        console.error(e2);
+  const lead = parsed.data;
+  setImmediate(async () => {
+    try {
+      await sendVisitorThankYouEmail({ to: lead.email, siteName });
+
+      const { name, subject, message } = lead;
+      if (notifyEmail && (name || subject || message)) {
+        try {
+          await sendStaffLeadNotification({
+            notifyTo: notifyEmail,
+            siteName,
+            lead
+          });
+        } catch (e2) {
+          // eslint-disable-next-line no-console
+          console.error(e2);
+        }
       }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error(e);
     }
-
-    return res.json({ ok: true, sent: true });
-  } catch (e) {
-    if (e?.code === "SMTP_NOT_CONFIGURED" || e?.code === "MAIL_FROM_MISSING") {
-      return res.status(503).json({
-        ok: false,
-        sent: false,
-        error: "Mail not configured",
-        hint:
-          "Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and MAIL_FROM (or SMTP_USER as From) on Railway."
-      });
-    }
-    // eslint-disable-next-line no-console
-    console.error(e);
-    return res.status(500).json({ ok: false, sent: false, error: "Send failed" });
-  }
+  });
 });
 
 // --- Public Rooms API (used by stay page JS) ---

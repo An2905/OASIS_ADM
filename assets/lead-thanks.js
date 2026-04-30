@@ -53,8 +53,9 @@
         if (box) box.textContent = "Sending…";
         try {
           const { res, data } = await postThankYou({ email });
-          if (box) box.textContent = res.ok && data.sent ? MSG_OK : MSG_PARTIAL;
-          if (res.ok && data.sent) form.reset();
+          const ok = res.ok && (data.sent || data.queued);
+          if (box) box.textContent = ok ? MSG_OK : MSG_PARTIAL;
+          if (ok) form.reset();
         } catch {
           if (box) box.textContent = MSG_ERR;
         } finally {
@@ -90,9 +91,11 @@
             out.removeAttribute("aria-hidden");
             out.classList.remove("wpcf7-validation-errors", "wpcf7-spam-blocked");
             out.classList.add("wpcf7-mail-sent-ok");
-            out.textContent = res.ok && data.sent ? MSG_OK : MSG_PARTIAL;
+            const ok = res.ok && (data.sent || data.queued);
+            out.textContent = ok ? MSG_OK : MSG_PARTIAL;
           }
-          if (res.ok && data.sent) form.reset();
+          const ok = res.ok && (data.sent || data.queued);
+          if (ok) form.reset();
         } catch {
           if (out) {
             out.removeAttribute("aria-hidden");
