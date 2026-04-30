@@ -39,7 +39,7 @@ const ASSET_VERSIONS = {
   siteEn: "3",
   roomDetail: "5",
   cmsConfig: "4",
-  leadThanks: "1"
+  leadThanks: "2"
 };
 
 function rewriteAssetScriptSrc(html, file, version) {

@@ -34,21 +34,18 @@
         const honeypot = form.querySelector('input[name="_mc4wp_honeypot"]');
         if (honeypot && honeypot.value) return;
 
-        const agree = form.querySelector('input[name="AGREE_TO_TERMS"]');
-        if (agree && agree.required && !agree.checked) return;
+        // Let browser handle required email + checkbox messages.
+        if (!form.reportValidity()) return;
 
         const emailEl = form.querySelector('input[name="EMAIL"], input[type="email"]');
         if (!emailEl) return;
-        if (!emailEl.checkValidity()) {
-          emailEl.reportValidity();
-          return;
-        }
 
         ev.preventDefault();
         ev.stopPropagation();
 
         const email = String(emailEl.value || "").trim();
         const box = form.querySelector(".mc4wp-response");
+        if (box) box.textContent = "Sending…";
         try {
           const { res, data } = await postThankYou({ email });
           if (box) box.textContent = res.ok && data.sent ? MSG_OK : MSG_PARTIAL;
