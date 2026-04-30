@@ -8,12 +8,15 @@
     "Sorry, something went wrong while sending email. Please try again later or contact us directly.";
 
   async function postThankYou(payload) {
+    const ac = new AbortController();
+    const t = window.setTimeout(() => ac.abort(), 12000);
     const res = await fetch("/api/public/lead-thank-you", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-      credentials: "same-origin"
-    });
+      credentials: "same-origin",
+      signal: ac.signal
+    }).finally(() => window.clearTimeout(t));
     let data = {};
     try {
       data = await res.json();
@@ -45,6 +48,8 @@
 
         const email = String(emailEl.value || "").trim();
         const box = form.querySelector(".mc4wp-response");
+        const btn = form.querySelector('button[type="submit"], input[type="submit"]');
+        if (btn) btn.disabled = true;
         if (box) box.textContent = "Sending…";
         try {
           const { res, data } = await postThankYou({ email });
@@ -52,6 +57,8 @@
           if (res.ok && data.sent) form.reset();
         } catch {
           if (box) box.textContent = MSG_ERR;
+        } finally {
+          if (btn) btn.disabled = false;
         }
         return;
       }
@@ -75,6 +82,8 @@
         };
 
         const out = form.querySelector(".wpcf7-response-output");
+        const btn = form.querySelector('button[type="submit"], input[type="submit"]');
+        if (btn) btn.disabled = true;
         try {
           const { res, data } = await postThankYou(payload);
           if (out) {
@@ -90,6 +99,8 @@
             out.classList.add("wpcf7-validation-errors");
             out.textContent = MSG_ERR;
           }
+        } finally {
+          if (btn) btn.disabled = false;
         }
       }
     },
