@@ -113,8 +113,62 @@ app.use(
   })
 );
 
+// Static HTML export only — no WordPress PHP. Stub REST + emoji asset so bundled WP scripts stop 404/MIME errors.
+app.use((req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  if (req.path !== "/wp-includes/js/wp-emoji-release.min.js") return next();
+  res.type("application/javascript");
+  res.setHeader("Cache-Control", "public, max-age=86400");
+  return res.send(
+    "/* Oasis static host: wp-emoji-release not in export; native emoji */\n"
+  );
+});
+
+app.use((req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") return next();
+  const p = req.path;
+  if (!p.startsWith("/wp-json")) return next();
+
+  res.setHeader("Cache-Control", "no-store");
+  res.type("application/json");
+
+  const wpV2Index = () => ({
+    namespace: "wp/v2",
+    routes: {
+      "/wp/v2": {
+        namespace: "wp/v2",
+        methods: ["GET"],
+        endpoints: [{ methods: ["GET"], args: {} }]
+      }
+    },
+    _links: {}
+  });
+
+  if (p === "/wp-json" || p === "/wp-json/") {
+    return res.json({
+      name: "Tam Coc Oasis",
+      description: "Static export — REST API stub",
+      namespaces: ["wp/v2"],
+      routes: { "/wp/v2": { namespace: "wp/v2", methods: ["GET"] } },
+      _links: {}
+    });
+  }
+
+  if (
+    p === "/wp-json/wp/v2" ||
+    p === "/wp-json/wp/v2/" ||
+    p.startsWith("/wp-json/wp/v2/")
+  ) {
+    return res.json(wpV2Index());
+  }
+
+  return res.json({});
+});
+
 function shouldBypassHtml(reqPath) {
   return (
+    reqPath.startsWith("/wp-json") ||
+    reqPath === "/wp-json" ||
     reqPath.startsWith("/assets/") ||
     reqPath === "/assets" ||
     reqPath.startsWith("/wp-content/") ||
