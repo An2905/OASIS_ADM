@@ -13,3 +13,33 @@
 */
 
  /** Add your styles below **/
+
+/* --- Oasis static host: improve newsletter/contact feedback UX --- */
+.mc4wp-form .mc4wp-response,
+.wpcf7 form .wpcf7-response-output {
+  margin-top: 12px !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* Ensure newsletter message never overlays the input */
+.mc4wp-form .mc4wp-form-fields,
+.mc4wp-form .fields-container {
+  position: relative;
+}
+
+.mc4wp-form .mc4wp-response {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+.wpcf7 form .wpcf7-response-output {
+  background: rgba(0, 0, 0, 0.45);
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #fff;
+}

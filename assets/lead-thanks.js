@@ -1,9 +1,9 @@
 // Sends automatic thank-you email via Oasis CMS after newsletter or contact submit.
 (() => {
   const MSG_OK_MAIL =
-    "Thank you. A confirmation email has been queued — please check your inbox (and spam folder). We will reply within 12 business hours.";
+    "Thanks! Please check your inbox (and spam). We’ll reply within 12 business hours.";
   const MSG_NO_SMTP =
-    "Thank you for your message. We will reply within 12 business hours. Automatic confirmation email is not enabled on the server yet — please contact us directly if you need an immediate reply.";
+    "Thanks! We’ll reply within 12 business hours. Email confirmation is not enabled right now.";
   const MSG_PARTIAL =
     "Thank you for your message. We will reply within 12 business hours. If email confirmation is unavailable right now, please contact us directly.";
   const MSG_ERR =

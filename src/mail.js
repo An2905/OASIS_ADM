@@ -100,7 +100,7 @@ export async function sendVisitorThankYouEmail({ to, siteName }) {
 <p>We have received your message and will reply within <strong>12 business hours</strong>.</p>
 <p>Best regards,<br>${escapeHtml(siteName)}</p>`;
 
-  await transport.sendMail({
+  const info = await transport.sendMail({
     from,
     to,
     replyTo: process.env.MAIL_REPLY_TO || undefined,
@@ -109,7 +109,12 @@ export async function sendVisitorThankYouEmail({ to, siteName }) {
     html
   });
   // eslint-disable-next-line no-console
-  console.log("[lead-mail] visitor thank-you sent", { toDomain: String(to).split("@")[1] || "?" });
+  console.log("[lead-mail] visitor thank-you sent", {
+    via: useBrevoSmtp() ? "brevo" : "smtp",
+    toDomain: String(to).split("@")[1] || "?",
+    messageId: info?.messageId || null,
+    response: info?.response || null
+  });
 }
 
 export async function sendStaffLeadNotification({ notifyTo, siteName, lead }) {
@@ -126,7 +131,7 @@ export async function sendStaffLeadNotification({ notifyTo, siteName, lead }) {
     lead.message ? `Message:\n${lead.message}` : null
   ].filter(Boolean);
 
-  await transport.sendMail({
+  const info = await transport.sendMail({
     from,
     to: notifyTo,
     replyTo: lead.email || undefined,
@@ -134,5 +139,9 @@ export async function sendStaffLeadNotification({ notifyTo, siteName, lead }) {
     text: lines.join("\n\n")
   });
   // eslint-disable-next-line no-console
-  console.log("[lead-mail] staff notification sent");
+  console.log("[lead-mail] staff notification sent", {
+    via: useBrevoSmtp() ? "brevo" : "smtp",
+    messageId: info?.messageId || null,
+    response: info?.response || null
+  });
 }
