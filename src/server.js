@@ -359,10 +359,17 @@ app.post("/api/public/lead-thank-you", leadThankYouLimiter, async (req, res) => 
 
   let siteName = process.env.SITE_NAME || "Tamcoc Oasis";
   let notifyEmail = process.env.MAIL_NOTIFY_TO || null;
+  let emailTemplate = null;
   try {
     const settings = await getPublicSettingsWithTimeout();
     siteName = settings.siteName;
     notifyEmail = notifyEmail || settings.emailAddress;
+    emailTemplate = {
+      subject: settings.emailAutoSubject,
+      header: settings.emailAutoHeader,
+      body: settings.emailAutoBody,
+      footer: settings.emailAutoFooter
+    };
   } catch {
     // DB slow/unavailable — still acknowledge so the browser gets a response.
   }
@@ -376,7 +383,11 @@ app.post("/api/public/lead-thank-you", leadThankYouLimiter, async (req, res) => 
   const lead = parsed.data;
   setImmediate(async () => {
     try {
-      await sendVisitorThankYouEmail({ to: lead.email, siteName });
+      await sendVisitorThankYouEmail({
+        to: lead.email,
+        siteName,
+        template: emailTemplate || undefined
+      });
 
       const { name, subject, message } = lead;
       if (notifyEmail && (name || subject || message)) {
@@ -527,6 +538,10 @@ app.post("/admin/settings", requireAdmin, async (req, res) => {
     hotlineLabel: req.body.hotlineLabel,
     hotlineNumber: req.body.hotlineNumber,
     emailAddress: req.body.emailAddress,
+    emailAutoSubject: req.body.emailAutoSubject,
+    emailAutoHeader: req.body.emailAutoHeader,
+    emailAutoBody: req.body.emailAutoBody,
+    emailAutoFooter: req.body.emailAutoFooter,
     aboutHeroSubtitle: req.body.aboutHeroSubtitle,
     aboutHeroTitle: req.body.aboutHeroTitle,
     aboutHeroCounter1Label: req.body.aboutHeroCounter1Label,

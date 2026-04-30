@@ -26,6 +26,10 @@ export const PublicSettingsSchema = z.object({
     youtube: z.string().url().optional().or(z.literal("")),
     instagram: z.string().url().optional().or(z.literal(""))
   }),
+  emailAutoSubject: z.string().max(200).optional().or(z.literal("")),
+  emailAutoHeader: z.string().max(2000).optional().or(z.literal("")),
+  emailAutoBody: z.string().max(5000).optional().or(z.literal("")),
+  emailAutoFooter: z.string().max(2000).optional().or(z.literal("")),
   copyrightText: z.string().min(1).max(300)
 });
 
@@ -55,6 +59,11 @@ const DEFAULT_PUBLIC_SETTINGS = {
     youtube: "",
     instagram: ""
   },
+  emailAutoSubject: "Thank you — {siteName}",
+  emailAutoHeader: "",
+  emailAutoBody:
+    "Hello,\n\nThank you for contacting {siteName}.\n\nWe have received your message and will reply within 12 business hours.\n\nBest regards,\n{siteName}",
+  emailAutoFooter: "",
   copyrightText: "© Copyright TamCoc Oasis"
 };
 

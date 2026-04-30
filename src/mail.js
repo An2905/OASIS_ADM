@@ -70,6 +70,36 @@ export function canSendVisitorMail() {
   return Boolean((useBrevoApi() || getTransport()) && resolveMailFrom());
 }
 
+function applyTemplateVars(s, { siteName }) {
+  return String(s || "").replace(/\{siteName\}/g, String(siteName || ""));
+}
+
+function buildVisitorThankYouContent({ siteName, template }) {
+  const subjectTpl = template?.subject || `Thank you — {siteName}`;
+  const headerTpl = template?.header || "";
+  const bodyTpl =
+    template?.body ||
+    "Hello,\n\nThank you for contacting {siteName}.\n\nWe have received your message and will reply within 12 business hours.\n\nBest regards,\n{siteName}";
+  const footerTpl = template?.footer || "";
+
+  const subject = applyTemplateVars(subjectTpl, { siteName }).trim() || `Thank you — ${siteName}`;
+  const headerText = applyTemplateVars(headerTpl, { siteName }).trim();
+  const bodyText = applyTemplateVars(bodyTpl, { siteName }).trim();
+  const footerText = applyTemplateVars(footerTpl, { siteName }).trim();
+
+  const textParts = [headerText, bodyText, footerText].filter(Boolean);
+  const text = textParts.join("\n\n");
+
+  const htmlParts = [
+    headerText ? `<p>${escapeHtml(headerText).replace(/\n+/g, "<br>")}</p>` : "",
+    bodyText ? `<p>${escapeHtml(bodyText).replace(/\n+/g, "<br>")}</p>` : "",
+    footerText ? `<p>${escapeHtml(footerText).replace(/\n+/g, "<br>")}</p>` : ""
+  ].filter(Boolean);
+  const html = htmlParts.join("\n");
+
+  return { subject, text, html };
+}
+
 async function sendViaBrevoApi({ fromEmail, fromName, toEmail, subject, text, html, replyTo }) {
   const apiKey = process.env.BREVO_API_KEY || "";
   if (!apiKey) {
@@ -118,7 +148,7 @@ async function sendViaBrevoApi({ fromEmail, fromName, toEmail, subject, text, ht
  * Brevo: set BREVO_USER, BREVO_PASS, and MAIL_FROM (verified sender).
  * Generic SMTP: set SMTP_HOST, optional SMTP_USER/SMTP_PASS, MAIL_FROM.
  */
-export async function sendVisitorThankYouEmail({ to, siteName }) {
+export async function sendVisitorThankYouEmail({ to, siteName, template }) {
   const from = resolveMailFrom();
   if (!from) {
     const err = new Error("MAIL_FROM, BREVO_FROM, or BREVO_USER required");
@@ -126,22 +156,7 @@ export async function sendVisitorThankYouEmail({ to, siteName }) {
     throw err;
   }
 
-  const subject = `Thank you — ${siteName}`;
-  const text = [
-    `Hello,`,
-    ``,
-    `Thank you for contacting ${siteName}.`,
-    ``,
-    `We have received your message and will reply within 12 business hours.`,
-    ``,
-    `Best regards,`,
-    `${siteName}`
-  ].join("\n");
-
-  const html = `<p>Hello,</p>
-<p>Thank you for contacting <strong>${escapeHtml(siteName)}</strong>.</p>
-<p>We have received your message and will reply within <strong>12 business hours</strong>.</p>
-<p>Best regards,<br>${escapeHtml(siteName)}</p>`;
+  const { subject, text, html } = buildVisitorThankYouContent({ siteName, template });
 
   const replyTo = process.env.MAIL_REPLY_TO || undefined;
   if (useBrevoApi()) {

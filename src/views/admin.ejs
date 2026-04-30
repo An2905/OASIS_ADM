@@ -133,6 +133,7 @@
         border-radius:14px;
         color:#fecaca;
       }
+      .helpText{ color: var(--muted); font-size: 12px; margin-top: 8px; }
       .sectionTitle{
         margin: 0 0 10px;
         font-size: 13px;
@@ -209,6 +210,15 @@
                 <input name="emailAddress" type="email" value="<%= settings.emailAddress %>" required />
               </div>
               <div class="field">
+                <label>Email auto-response (Subject)</label>
+                <input
+                  name="emailAutoSubject"
+                  value="<%= settings.emailAutoSubject || '' %>"
+                  placeholder="Thank you — {siteName}"
+                />
+                <div class="helpText">Hỗ trợ biến <code>{siteName}</code>.</div>
+              </div>
+              <div class="field">
                 <label>Nhãn hotline</label>
                 <input name="hotlineLabel" value="<%= settings.hotlineLabel %>" required />
               </div>
@@ -216,6 +226,25 @@
                 <label>Số hotline</label>
                 <input name="hotlineNumber" value="<%= settings.hotlineNumber %>" required />
               </div>
+            </div>
+
+            <div style="margin-top:12px">
+              <h2 class="sectionTitle">Email auto-response</h2>
+              <div class="grid">
+                <div class="field">
+                  <label>Header (tuỳ chọn)</label>
+                  <textarea name="emailAutoHeader" placeholder=""><%= settings.emailAutoHeader || '' %></textarea>
+                </div>
+                <div class="field">
+                  <label>Body</label>
+                  <textarea name="emailAutoBody" placeholder=""><%= settings.emailAutoBody || '' %></textarea>
+                </div>
+                <div class="field">
+                  <label>Footer (tuỳ chọn)</label>
+                  <textarea name="emailAutoFooter" placeholder=""><%= settings.emailAutoFooter || '' %></textarea>
+                </div>
+              </div>
+              <div class="helpText">Hỗ trợ biến <code>{siteName}</code>. Mỗi dòng sẽ xuống hàng trong email.</div>
             </div>
 
             <div style="margin-top:16px">
